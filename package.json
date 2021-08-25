@@ -2,14 +2,24 @@
   "name": "coastal-registration",
   "version": "0.1.0",
   "description": "coastal registration arc application",
+  "prettier": {
+    "singleQuote": true,
+    "endOfLine": "lf",
+    "arrowParens": "avoid"
+  },
   "scripts": {
     "test": "grunt test"
   },
   "devDependencies": {
+    "eslint": "^7.2.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-node": "^11.1.0",
     "grunt": "^1.4.1",
     "grunt-browserify": "^6.0.0",
     "grunt-contrib-jshint": "^3.0.0",
     "grunt-contrib-watch": "^1.1.0",
+    "grunt-eslint": "^23.0.0",
     "grunt-mocha-test": "^0.13.3",
     "grunt-mozu-appdev-sync": "^2.4.1",
     "load-grunt-tasks": "^5.1.0",

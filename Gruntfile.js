@@ -5,12 +5,15 @@ module.exports = function (grunt) {
     require('load-grunt-tasks')(grunt);
     grunt.initConfig({
         mozuconfig: grunt.file.readJSON('./mozu.config.json'),
-        jshint: {
-            'normal': ['./assets/src/**/*.js'],
-            'continuous': {
-                'options': { 'force': true },
-                'src': '<%= jshint.normal %>'
-            }
+        // jshint: {
+        //     'normal': ['./assets/src/**/*.js'],
+        //     'continuous': {
+        //         'options': { 'force': true },
+        //         'src': '<%= jshint.normal %>'
+        //     }
+        // },
+        eslint:{
+            target: ['./assets/src/**/*.js'],
         },
         browserify: {
             'all': {
@@ -96,7 +99,7 @@ module.exports = function (grunt) {
         }
     });
     grunt.registerTask('build', [
-        'jshint:normal',
+        'eslint',
         'browserify:all',
         'manifest',
         'test'
