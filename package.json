@@ -29,6 +29,7 @@
     "time-grunt": "^2.0.0"
   },
   "dependencies": {
+    "axios": "^0.21.1",
     "mozu-node-sdk": "^2.15.6",
     "requests": "^0.3.0"
   }
