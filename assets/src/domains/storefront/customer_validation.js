@@ -1,117 +1,62 @@
-const request = require('requests');
+// const request = require('requests');
+// const fetch1 = require('node-fetch');
+const superagent = require('superagent');
 
 module.exports = function (context) {
-  async function customerValidation() {
-    let response;
-    await request('https://api.simpleapps.net/ecommerce/customers/100004?resource_list=all', {
-      method: 'GET',
-      headers: {
-        'x-api-key': '020A1B0AD2E19A2C13931F6744BC52C096FF5BB0',
-        siteid: 'coastalone'
-      }
+  // eslint-disable-next-line prefer-object-spread
+  const payload = Object.assign({}, context.request.body);
 
-    }).on('data', customervalidation => {
-      response = customervalidation;
-      console.log('Customer Data', customervalidation);
-      // context.response.body = customervalidation;
-      // context.response.end();
-      // eslint-disable-next-line consistent-return
-    }).on('end', err => {
-      if (err) {
-        // eslint-disable-next-line no-unused-vars
-        response = err;
-        return console.log('connection closed due to errors', err);
-        // console.log('end');
-        // callback();
-      }
-    });
-    console.info('Initiating simpleappsapi and added customer data request');
-    return response;
+  const requiredData = {};
+  async function customerValidate() {
+    return superagent
+      .get(
+        `https://api.simpleapps.net/ecommerce/customers/${payload.accountNumber}?resource_list=all`
+      )
+      .set('x-api-key', '020A1B0AD2E19A2C13931F6744BC52C096FF5BB0')
+      .set('siteid', 'coastalone');
   }
-  async function invoiceFunction() {
-    let response;
-    await request('https://api.simpleapps.net/ecommerce/invoices?resource_list=all&customer_id=100004&limit=5', {
-      method: 'GET',
-      headers: {
-        'x-api-key': '020A1B0AD2E19A2C13931F6744BC52C096FF5BB0',
-        siteid: 'coastalone'
-      }
-
-    }).on('data', customervalidation => {
-      response = customervalidation;
-      console.log('Customer Data', customervalidation);
-      // context.response.body = customervalidation;
-      // context.response.end();
-      // eslint-disable-next-line consistent-return
-    }).on('end', err => {
-      if (err) {
-        // eslint-disable-next-line no-unused-vars
-        response = err;
-        return console.log('connection closed due to errors', err);
-        // console.log('end');
-        // callback();
-      }
-    });
-    console.info('Initiating simpleappsapi and added customer data request');
-    return response;
+  async function invoiceValidate() {
+    return superagent
+      .get(
+        `https://api.simpleapps.net/ecommerce/invoices?resource_list=all&customer_id=${payload.accountNumber}&limit=5`
+      )
+      .set('x-api-key', '020A1B0AD2E19A2C13931F6744BC52C096FF5BB0')
+      .set('siteid', 'coastalone');
   }
-
-  customerValidation().then(res => {
-    const parseData = JSON.parse(JSON.parse(res));
-    console.log(parseData);
-    context.response.body = parseData;
-  });
-
-  // function invoiceFunction() {
-  //   request('https://api.simpleapps.net/ecommerce/invoices?resource_list=all&customer_id=100004&limit=5', {
-  //     method: 'GET',
-  //     headers: {
-  //       'x-api-key': '020A1B0AD2E19A2C13931F6744BC52C096FF5BB0',
-  //       siteid: 'coastalone'
-  //     }
-
-  //   })
-
-  //     .on('data', chunk => {
-  //       console.log('Invoice Data', chunk);
-  //       context.response.body = chunk;
-  //       context.response.end();
-  //     })
-  //     .on('end', err => {
-  //       if (err) return console.log('connection closed due to errors', err);
-
-  //       console.log('end');
-  //       callback();
-  //     });
-
-  //   console.info('Initiating simpleappsapi and added Invoice data request');
-
-  //   callback();
-
-  // //Invoice
-
-  // request('https://api.simpleapps.net/ecommerce/invoices?resource_list=all&customer_id=100004&limit=5', {
-  //     method: 'GET',
-  //     headers: {
-  //       'x-api-key': '020A1B0AD2E19A2C13931F6744BC52C096FF5BB0',
-  //       'siteid': 'coastalone'
-  //     }
-
-  //   })
-
-  //   .on('data', function (chunk) {
-  //     console.log("Invoice Data", chunk);
-  //     context.response.body = chunk;
-  //     context.response.end();
-  //   })
-  //   .on('end', function (err) {
-  //     if (err) return console.log('connection closed due to errors', err);
-
-  //     console.log('end');
-  //     callback();
-  //   });
-
-  // console.info('Initiating simpleappsapi and added Invoice data request');
-
-  // callback();
+  customerValidate()
+    // eslint-disable-next-line consistent-return
+    .then(res => {
+      requiredData.customerValidated = JSON.parse(res.text);
+      // console.log(requiredData.customerValidated.data.customer_id);
+      // console.log(requiredData.customerValidated.data.resources.customersBilltos[0].phys_postal_code);
+      // console.log(payload.accountNumber);
+      // console.log(payload.billingZip);
+      // console.log(requiredData.customerValidated);
+      // eslint-disable-next-line eqeqeq
+      if ((requiredData.customerValidated.data.customer_id == payload.accountNumber)
+        // eslint-disable-next-line eqeqeq
+        && (requiredData.customerValidated.data.resources.customersBilltos[0].phys_postal_code == payload.billingZip)) {
+        return invoiceValidate();
+      }
+      throw new Error('Account not validated for Customer Account');
+    })
+    // eslint-disable-next-line consistent-return
+    .then(res => {
+      requiredData.invoiceValidated = JSON.parse(res.text);
+      const invoiceLength = requiredData.invoiceValidated.data.length - 1;
+      // console.log(requiredData.invoiceValidated.data[invoiceLength].total_amount);
+      // console.log(payload.lastInvoice);
+      // eslint-disable-next-line eqeqeq
+      if (requiredData.invoiceValidated.data[invoiceLength].total_amount == payload.lastInvoice) {
+        context.response.body = requiredData;
+        context.response.end();
+        return;
+      }
+      throw new Error('Account not validated for Invoice Account');
+    })
+    .catch(err => {
+      console.log(err);
+      context.response.body = err.message;
+      context.response.end();
+    });
 };
