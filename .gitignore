@@ -3,4 +3,5 @@ dist/**
 .yo-rc.json
 mozu.config.json
 mozu.config
+assets/dist/storefront.manifest.all.js
 assets/dist/**
