@@ -40,7 +40,8 @@ module.exports = function (context) {
     })
     .catch(err => {
       console.log(err);
-      context.response.body = err;
+      context.response.status = 400;
+      context.response.body = err.message;
       context.response.end();
     });
 };
