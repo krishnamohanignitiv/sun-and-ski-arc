@@ -2,7 +2,11 @@ const B2bAccountSDK = require('mozu-node-sdk/clients/commerce/customer/b2BAccoun
 const Client = require('mozu-node-sdk/clients/platform/application');
 
 module.exports = function (context) {
-  const payload = Object.assign({}, context.request.body); // eslint-disable-line prefer-object-spread
+  const payload = Object.assign({}, context.request.body.payload); // eslint-disable-line prefer-object-spread
+  let p21AccountId = null;
+  if (context.request.body.p21AccountId) {
+    p21AccountId = context.request.body.p21AccountId;
+  }
   const client = new Client({
     context: {
       appKey: 'CosCon.coastal_registration.1.0.0.Release',
@@ -34,8 +38,23 @@ module.exports = function (context) {
       return b2bAccount.accountApprove({ accountId, status: 'approve' });
     })
     .then(res => {
-      console.info('Account Created', res);
-      context.response.body = 'Account created';
+      if (p21AccountId) {
+        return b2bAccount.addB2BAccountAttribute(
+          { accountId: res.id, attributeFQN: 'tenant~account_id' },
+          {
+            body: {
+              fullyQualifiedName: 'tenant~account_id',
+              values: [p21AccountId],
+            },
+          }
+        );
+      }
+      return Promise.resolve('Creating New User');
+    })
+    .then(() => {
+      // console.log(res);
+      // context.response.status = 201;
+      context.response.body = 'Successfully Created Account';
       context.response.end();
     })
     .catch(err => {
