@@ -58,9 +58,9 @@ module.exports = function (context) {
       context.response.end();
     })
     .catch(err => {
-      console.log(err);
+      console.log(err.originalError.message);
       context.response.status = 400;
-      context.response.body = err.message;
+      context.response.body = err.originalError.message;
       context.response.end();
     });
 };

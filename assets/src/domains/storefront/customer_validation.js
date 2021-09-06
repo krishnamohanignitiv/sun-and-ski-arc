@@ -11,7 +11,7 @@ module.exports = function (context) {
   const reqURL = url.parse(context.request.href);
   // eslint-disable-next-line prefer-object-spread
   const payload = Object.assign({}, context.request.body);
-  console.log(payload);
+  // console.log(payload);
   const client = new Client({
     context: {
       appKey: 'CosCon.coastal_registration.1.0.0.Release',
