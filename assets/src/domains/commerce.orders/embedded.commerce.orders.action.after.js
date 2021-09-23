@@ -137,10 +137,10 @@
 
  */
 const Client = require('mozu-node-sdk/clients/platform/application');
-// const PriceListController = require('../../pricelist/PriceListController');
+const PriceListController = require('../../pricelist/PriceListController');
 const EntityListController = require('../../EntityList/EntityListController');
 
-// const priceList = new PriceListController();
+const priceList = new PriceListController();
 const entityList = new EntityListController();
 
 module.exports = function (context, callback) {
@@ -160,7 +160,7 @@ module.exports = function (context, callback) {
 
     const productToUpdate = order.items.map(product => ({
       productCode: product.product.productCode,
-      orderQty: product.quantity
+      availableQty: product.quantity
     }));
 
     const payload = {
@@ -171,20 +171,34 @@ module.exports = function (context, callback) {
 
     const clientContext = new Client();
 
-    // const promises = [entityList.updateEntity(clientContext, payload), priceList.updateB2BAccount(context, {}) ];
+    const promises = [entityList.updateEntity(clientContext, payload), priceList.updateB2BAccount(context, {
+      accountId: order.customerAccountId,
+      priceListCode: 'default'
+    })];
 
-    entityList
-      .updateEntity(clientContext, payload)
-    // eslint-disable-next-line no-unused-vars
+    Promise.all(promises)
+      // eslint-disable-next-line no-unused-vars
       .then(res => {
-      // console.log(res);
+        console.log('Done');
+        callback();
+      })
+      .catch(err => {
+        console.log(err);
         callback();
       });
+
+    // entityList
+    //   .updateEntity(clientContext, payload)
+    // // eslint-disable-next-line no-unused-vars
+    //   .then(res => {
+    //   // console.log(res);
+    //     callback();
+    //   });
 
     // priceList
     // .updateB2BAccount(clientContext,{
 
-  // })
+    // })
   } else {
     callback();
   }

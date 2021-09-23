@@ -19,21 +19,35 @@ class EntityListServices {
       entityClient.context['user-claims'] = null;
 
       // eslint-disable-next-line max-len
-      const tempArr = [];
-      entityData.productList.forEach(product => {
-        payload.productToUpdate.forEach(orderedProduct => {
-          console.log(orderedProduct, product);
-          if (orderedProduct.productCode === product.productCode) {
-            tempArr.push({
-              productCode: orderedProduct.productCode,
-              availableQty: Number(product.availableQty) - Number(orderedProduct.orderQty)
-            });
-          } else {
-            tempArr.push(product);
-          }
-        });
+      // const tempArr = [];
+      // entityData.productList.forEach(product => {
+      //   payload.productToUpdate.forEach(orderedProduct => {
+      //     console.log(orderedProduct, product);
+      //     if (orderedProduct.productCode === product.productCode) {
+      //       tempArr.push({
+      //         productCode: orderedProduct.productCode,
+      //         availableQty: Number(product.availableQty) - Number(orderedProduct.orderQty)
+      //       });
+      //     } else {
+      //       tempArr.push(product);
+      //     }
+      //   });
+      // });
+
+      const newProductList = entityData.productList.map(product => {
+        const foundIndex = payload.productToUpdate.findIndex(obj => obj.productCode === product.productCode);
+
+        if (foundIndex !== -1) {
+          return {
+            productCode: payload.productToUpdate[foundIndex].productCode,
+            availableQty: Number(product.availableQty) - Number(payload.productToUpdate[foundIndex].availableQty)
+          };
+        }
+
+        return product;
       });
-      entityData.productList = [].concat(tempArr);
+
+      entityData.productList = newProductList;
       return entityClient.updateEntity({
         entityListFullName: payload.entityListFQN,
         id: payload.quoteId
