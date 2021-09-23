@@ -1,12 +1,22 @@
 {
   "exports": [
     {
+      "id": "embedded.commerce.orders.action.after",
+      "virtualPath": "./dist\\commerce.orders.manifest.all.js",
+      "actionId": "embedded.commerce.orders.action.after"
+    },
+    {
       "id": "customer_validation",
       "virtualPath": "./dist\\storefront.manifest.all.js",
       "actionId": "http.storefront.routes"
     },
     {
       "id": "b2b_user_creation",
+      "virtualPath": "./dist\\storefront.manifest.all.js",
+      "actionId": "http.storefront.routes"
+    },
+    {
+      "id": "priceListChange",
       "virtualPath": "./dist\\storefront.manifest.all.js",
       "actionId": "http.storefront.routes"
     }

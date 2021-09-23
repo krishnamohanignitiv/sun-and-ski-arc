@@ -1,4 +1,6 @@
 /* eslint-disable global-require */
+// const PriceList = require('./domains/storefront/priceListChange');
+
 module.exports = {
   customer_validation: {
     actionName: 'http.storefront.routes',
@@ -10,4 +12,8 @@ module.exports = {
     customFunction: require('./domains/storefront/b2b_user_creation'),
     // customRoute: 'coastal/api/commerce/customer/b2baccounts',
   },
+  priceListChange: {
+    actionName: 'http.storefront.routes',
+    customFunction: require('./domains/storefront/priceListChange')
+  }
 };

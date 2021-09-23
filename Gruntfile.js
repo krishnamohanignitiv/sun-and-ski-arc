@@ -97,7 +97,7 @@ module.exports = function (grunt) {
       },
     },
   });
-  grunt.registerTask('build', ['eslint', 'browserify:all', 'manifest', 'test']);
+  grunt.registerTask('build', ['eslint', 'browserify:all', 'manifest']);// removed test from array
   grunt.registerTask('default', ['build', 'mozusync:upload']);
   grunt.registerTask('reset', ['mozusync:wipe', 'mozusync:upload']);
   grunt.registerTask('cont', ['watch']);
