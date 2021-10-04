@@ -93,7 +93,7 @@ module.exports = function (context) {
         const validateAmount = requiredData.invoiceValidated.data.findIndex(
           element => Number(element.total_amount) === Number(payload.lastInvoice)
         );
-        if (validateAmount && validateAmount !== -1) resolve();
+        if (validateAmount >= 0) resolve();
 
         reject(new Error('Account not validated for invoice amount'));
       });
