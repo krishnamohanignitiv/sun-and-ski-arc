@@ -15,13 +15,14 @@ class PriceListServices {
   async updateB2BAccount(context, payload) {
     const b2bAccountClient = new B2bAccountSDK(context);
     b2bAccountClient.context['user-claims'] = null;
+    const currentB2BAccount = await b2bAccountClient.getB2BAccount({
+      accountId: payload.accountId
+    });
+    currentB2BAccount.priceList = payload.priceListCode;
     return b2bAccountClient.updateAccount({
       accountId: payload.accountId
     }, {
-      body: {
-        // companyOrOrganization: payload.userInfo.companyOrOrganization,
-        priceList: payload.priceListCode
-      }
+      body: currentB2BAccount
     });
   }
 
