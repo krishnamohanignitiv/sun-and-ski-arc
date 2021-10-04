@@ -26,25 +26,28 @@ module.exports = function (context) {
 
   const requiredData = {};
   /**
- * All async functions
- */
+   * All async functions
+   */
   async function customerValidate() {
-    console.log(payload.accountNumber);
     return superagent
       .get(
         `https://api.simpleapps.net/ecommerce/customers/${payload.accountNumber}`
       )
-      .query({ resource_list: 'all' })
-      .set('x-api-key', '020A1B0AD2E19A2C13931F6744BC52C096FF5BB0')
-      .set('siteid', 'coastalone');
+      .query({ resource_list: 'all', siteid: 'coastalone' })
+      .set('x-api-key', '020A1B0AD2E19A2C13931F6744BC52C096FF5BB0');
   }
   async function invoiceValidate() {
     return superagent
       .get(
         `https://api.simpleapps.net/ecommerce/invoices?resource_list=all&customer_id=${payload.accountNumber}`
       )
-      .set('x-api-key', '020A1B0AD2E19A2C13931F6744BC52C096FF5BB0')
-      .set('siteid', 'coastalone');
+      .query({
+        resource_list: 'all',
+        siteid: 'coastalone',
+        customer_id: payload.accountNumber,
+        limit: 5,
+      })
+      .set('x-api-key', '020A1B0AD2E19A2C13931F6744BC52C096FF5BB0');
   }
   async function makeB2BAccount(accountInfo) {
     return superagent
@@ -54,24 +57,29 @@ module.exports = function (context) {
       .send(accountInfo);
   }
   async function validateExistingAccount(accountNumber) {
-    return b2bAccount.getB2BAccounts({ filter: `attributes.value eq ${accountNumber}` });
+    return b2bAccount.getB2BAccounts({
+      filter: `attributes.value eq ${accountNumber}`,
+    });
   }
   /**
    * Validate custom attribute before customerValidate
    */
   validateExistingAccount(payload.accountNumber)
-    .then(res => new Promise((resolve, reject) => {
-      if (res.totalCount === 0) {
-        resolve('Account does not exist');
-      }
-      reject(new Error('Account is already registered'));
-    }))
+    .then(
+      res => new Promise((resolve, reject) => {
+        if (res.totalCount === 0) {
+          resolve('Account does not exist');
+        }
+        reject(new Error('Account is already registered'));
+      })
+    )
     .then(() => customerValidate())
     // eslint-disable-next-line consistent-return
     .then(res => {
       requiredData.customerValidated = JSON.parse(res.text);
       if (
-        requiredData.customerValidated.data.customer_id === payload.accountNumber
+        requiredData.customerValidated.data.customer_id
+          === payload.accountNumber
         && requiredData.customerValidated.data.resources.customersBilltos[0]
           .phys_postal_code === payload.billingZip
       ) {
@@ -79,10 +87,19 @@ module.exports = function (context) {
       }
       throw new Error('Account not validated for Customer Account');
     })
-    // eslint-disable-next-line consistent-return
-    // eslint-disable-next-line no-unused-vars
     .then(res => {
-      // requiredData.invoiceValidated = JSON.parse(res.text);
+      requiredData.invoiceValidated = JSON.parse(res.text);
+      return new Promise((resolve, reject) => {
+        const validateAmount = requiredData.invoiceValidated.data.findIndex(
+          element => Number(element.total_amount) === Number(payload.lastInvoice)
+        );
+        if (validateAmount && validateAmount !== -1) resolve();
+
+        reject(new Error('Account not validated for invoice amount'));
+      });
+    })
+    .then(() => {
+      console.log(requiredData.invoiceValidated.data);
       const { customer_id: accountId, customer_name: companyOrOrganization } = requiredData.customerValidated.data;
       const {
         // eslint-disable-next-line max-len
