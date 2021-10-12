@@ -1,5 +1,5 @@
-const B2bAccountSDK = require('mozu-node-sdk/clients/commerce/customer/b2BAccount');
 const Client = require('mozu-node-sdk/clients/platform/application');
+const B2bAccountSDK = require('../../../resources/b2bAccount');
 
 module.exports = function (context) {
   const payload = Object.assign({}, context.request.body.payload); // eslint-disable-line prefer-object-spread
@@ -26,11 +26,12 @@ module.exports = function (context) {
       }
     )
     .then(res => {
+      console.log(res);
       const { id: accountId } = res;
 
       return b2bAccount.addSalesRep({
         accountId,
-        userId: '5b0e9d19811a4ea99c3588ca64ba61ca',
+        userId: 'e0f6008ea91544a59b0d667406e372c2',
       });
     })
     .then(res => {
