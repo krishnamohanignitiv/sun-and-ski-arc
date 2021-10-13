@@ -1,14 +1,17 @@
 // const request = require('requests');
 // const fetch1 = require('node-fetch');
-const url = require('url');
+// const url = require('url');
 const superagent = require('superagent');
-const B2bAccountSDK = require('mozu-node-sdk/clients/commerce/customer/b2BAccount');
 const Client = require('mozu-node-sdk/clients/platform/application');
+const B2bAccountSDK = require('../../../resources/b2bAccount');
+const B2BAccount = require('../../utilities/b2bAccountCreationPipeline');
 // const AccountCreation = require('../../utilities/b2bAccountCreationPipeline');
+
+const B2bAccountCreate = new B2BAccount();
 
 module.exports = function (context) {
   // eslint-disable-next-line node/no-deprecated-api
-  const reqURL = url.parse(context.request.href);
+  // const reqURL = url.parse(context.request.href);
   // eslint-disable-next-line prefer-object-spread
   const payload = Object.assign({}, context.request.body);
   // console.log(payload);
@@ -18,6 +21,8 @@ module.exports = function (context) {
       sharedSecret: '00c410dac56d49c7bc13ffc5d470ca44',
     },
   });
+
+  const tempClient = new Client();
 
   client.context['user-claims'] = null;
   const b2bAccount = new B2bAccountSDK(client);
@@ -79,20 +84,21 @@ module.exports = function (context) {
       });
   }
 
-  async function makeB2BAccount(accountInfo) {
-    return superagent
-      .post(
-        `https://${reqURL.hostname}/coastal/api/commerce/customer/b2baccounts`
-      )
-      .send(accountInfo)
-      .then(() => {
-        console.log('B2B new Account Custom Function Success');
-      })
-      .catch(err => {
-        console.log(err.message);
-        throw new Error(err.message);
-      });
-  }
+  // async function makeB2BAccount(accountInfo) {
+  //   return superagent
+  //     .post(
+  //       `https://${reqURL.hostname}/coastal/api/commerce/customer/b2baccounts`
+  //     )
+  //     .send(accountInfo);
+  //   // .then(() => {
+  //   //   console.log('B2B new Account Custom Function Success');
+  //   // })
+  //   // .catch(err => {
+  //   //   console.log('Error Block');
+  //   //   console.log(err.response.text);
+  //   //   throw new Error(err.response.text);
+  //   // });
+  // }
   async function validateExistingAccount(accountNumber) {
     return b2bAccount.getB2BAccounts({
       filter: `attributes.value eq ${accountNumber}`,
@@ -225,17 +231,34 @@ module.exports = function (context) {
           },
         ],
       };
-      return makeB2BAccount({ payload: accountPayload, p21AccountId });
+      // eslint-disable-next-line prefer-object-spread
+      return B2bAccountCreate.b2bAccountflow(tempClient, Object.assign({}, accountPayload, { p21AccountId }));
+      // return makeB2BAccount({ payload: accountPayload, p21AccountId });
       // throw new Error('Account not validated for Invoice Account');
+    })
+    .then(res => {
+      console.log(res);
+      if (res instanceof Error) {
+        return Promise.reject(res);
+      }
+      return Promise.resolve();
     })
     .then(() => {
       context.response.body = 'Account Created';
       context.response.end();
     })
     .catch(err => {
-      console.log(err);
+      console.log(err.message);
+      // let newErr;
+      // if (err.originalError.message) {
+      //   newErr = new Error(err.originalError.message);
+      // } else {
+      //   newErr = err;
+      // }
+      // // console.log(newErr);
+      // console.log(newErr.message);
       context.response.status = 400;
-      context.response.body = err.message || err.originalError;
+      context.response.body = err.message;
       context.response.end();
     });
 };
