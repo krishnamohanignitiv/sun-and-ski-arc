@@ -233,9 +233,9 @@ module.exports = function (context) {
       context.response.end();
     })
     .catch(err => {
-      console.dir(err);
+      console.log(err);
       context.response.status = 400;
-      context.response.body = err.message;
+      context.response.body = err.message || err.originalError;
       context.response.end();
     });
 };

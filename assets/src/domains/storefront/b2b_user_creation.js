@@ -61,7 +61,7 @@ module.exports = function (context) {
     .catch(err => {
       console.log(err.originalError.message);
       context.response.status = 400;
-      context.response.body = err.originalError.message;
+      context.response.body = err.originalError;
       context.response.end();
     });
 };
