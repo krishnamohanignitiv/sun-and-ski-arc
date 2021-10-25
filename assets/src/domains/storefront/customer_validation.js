@@ -205,34 +205,36 @@ module.exports = function (context) {
         isActive: true,
         isAnonymous: false,
         agreeToGDPR: true,
-        contacts: [
-          {
-            types: [
-              {
-                name: 'Shipping',
-                isPrimary: true,
-              },
-              {
-                name: 'Billing',
-                isPrimary: false,
-              },
-            ],
-            email: payload.email,
-            firstName: payload.firstName,
-            lastName: payload.lastName,
-            address: {
-              address1,
-              address2,
-              cityOrTown,
-              stateOrProvince,
-              postalOrZipCode,
-              countryCode,
-            },
-          },
-        ],
       };
+      const billingAddress = [
+        {
+          types: [
+            {
+              name: 'Shipping',
+              isPrimary: false,
+            },
+            {
+              name: 'Billing',
+              isPrimary: true,
+            },
+          ],
+          email: payload.email,
+          firstName: payload.firstName,
+          lastNameOrSurname: payload.lastName,
+          companyOrOrganization: companyOrOrganization,
+          address: {
+            address1,
+            address2,
+            cityOrTown,
+            stateOrProvince,
+            postalOrZipCode,
+            countryCode,
+          },
+        },
+      ];
       // eslint-disable-next-line prefer-object-spread
-      return B2bAccountCreate.b2bAccountflow(tempClient, Object.assign({}, accountPayload, { p21AccountId }));
+      return B2bAccountCreate.b2bAccountflow(tempClient, accountPayload,
+        { p21AccountId, billingAddress });
       // return makeB2BAccount({ payload: accountPayload, p21AccountId });
       // throw new Error('Account not validated for Invoice Account');
     })

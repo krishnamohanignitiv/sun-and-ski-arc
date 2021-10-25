@@ -85,5 +85,9 @@ module.exports = Client.sub({
   accountApprove: Client.method({
     method: constants.verbs.PUT,
     url: '{+tenantPod}api/commerce/customer/b2baccounts/{accountId}/status/{status}'
+  }),
+  addContact: Client.method({
+    method: constants.verbs.PUT,
+    url: '{+tenantPod}api/commerce/customer/accounts/{accountId}/contacts'
   })
 });
