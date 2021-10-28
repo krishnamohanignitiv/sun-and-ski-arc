@@ -229,6 +229,7 @@ module.exports = function (context) {
             stateOrProvince,
             postalOrZipCode,
             countryCode,
+            isValidated: true
           },
         },
       ];
