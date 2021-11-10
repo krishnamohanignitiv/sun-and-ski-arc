@@ -53,6 +53,7 @@ module.exports = context => {
               // checking store closed day or not
               if (!location.regularHours[dayArr[currentDay]].isClosed) {
                 // checking if store is closing before 1 hour
+                console.log(location.regularHours);
                 localClosingHours = location.regularHours[
                   dayArr[currentDay]
                 ].closeTime.substring(0, 2); // subtracted 4 to convert to UTC
@@ -68,7 +69,7 @@ module.exports = context => {
                 }
               } else {
                 context.response.body = {
-                  message: 'Store closed',
+                  message: 'Store closed today, available for pickup tomorrow',
                 };
               }
               context.response.end();
@@ -159,10 +160,12 @@ module.exports = context => {
                             month: 'numeric',
                             year: 'numeric',
                           }).split(', ');
-                          console.log(formattedPickupDate);
+                          console.log(formattedPickupDate[0].split('/'));
+                          const formattedMonth = formattedPickupDate[0].split('/')[0];
+                          const formattedDate = formattedPickupDate[0].split('/')[1];
                           context.response.body = {
                             message:
-                              `Avaiable for pickup on ${formattedPickupDate[0].substring(0, 5)}`,
+                              `Avaiable for pickup on ${formattedMonth}/${formattedDate}`,
                           };
                         }
                         context.response.end();
