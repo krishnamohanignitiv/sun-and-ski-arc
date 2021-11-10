@@ -31,6 +31,7 @@
     "time-grunt": "^2.0.0"
   },
   "dependencies": {
+    "grunt-cli": "^1.4.3",
     "mozu-node-sdk": "^2.15.8",
     "requests": "^0.3.0",
     "superagent": "^6.1.0",
