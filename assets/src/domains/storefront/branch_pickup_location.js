@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 const ProductSDK = require('mozu-node-sdk/clients/commerce/catalog/storefront/product');
 const LocationSDK = require('mozu-node-sdk/clients/commerce/location');
 
@@ -59,17 +60,38 @@ module.exports = context => {
                 ].closeTime.substring(0, 2); // subtracted 4 to convert to UTC
                 if (localClosingHours - currentUserHours >= 1) {
                   const orderBefore = localClosingHours - 1;
+                  const formattedToday = currentDate.toLocaleTimeString('en-US', {
+                    timeZone: 'EST',
+                    day: 'numeric',
+                    month: 'numeric',
+                    year: 'numeric',
+                  }).split(', ');
                   context.response.body = {
                     message: `Available to pick up Today If ordered By ${orderBefore}:00`,
+                    date: formattedToday
                   };
                 } else {
+                  const newDate = new Date(currentDate.setDate(currentDate.getDate() + 1)).toLocaleTimeString('en-US', {
+                    timeZone: 'EST',
+                    day: 'numeric',
+                    month: 'numeric',
+                    year: 'numeric',
+                  }).split(', ');
                   context.response.body = {
                     message: 'Available for pickup tomorrow',
+                    date: newDate
                   };
                 }
               } else {
+                const newDate = new Date(currentDate.setDate(currentDate.getDate() + 1)).toLocaleTimeString('en-US', {
+                  timeZone: 'EST',
+                  day: 'numeric',
+                  month: 'numeric',
+                  year: 'numeric',
+                }).split(', ');
                 context.response.body = {
                   message: 'Store closed today, available for pickup tomorrow',
+                  date: newDate
                 };
               }
               context.response.end();
@@ -124,13 +146,19 @@ module.exports = context => {
                             context.response.body = {
                               message:
                                 'Available to pick up in 1 - 2 Business Days',
+                              date: new Date(currentDate.setDate(currentDate.getDate() + 1)).toLocaleTimeString('en-US', {
+                                timeZone: 'EST',
+                                day: 'numeric',
+                                month: 'numeric',
+                                year: 'numeric',
+                              }).split(', ')
                             };
                           } else {
                             const nearestNextPickupDay = currentDay - transferDay1 > 0 ? transferDay2
                             - currentDay + 2 : transferDay1 - currentDay + 2;
                             console.log(
                               new Date(
-                                currentDate.getFullYear + currentDate.getMonth + currentDate.getDate()
+                                currentDate.getFullYear() + currentDate.getMonth() + currentDate.getDate()
                                 + nearestNextPickupDay
                               )
                             );
@@ -166,6 +194,7 @@ module.exports = context => {
                           context.response.body = {
                             message:
                               `Avaiable for pickup on ${formattedMonth}/${formattedDate}`,
+                            date: formattedPickupDate
                           };
                         }
                         context.response.end();
