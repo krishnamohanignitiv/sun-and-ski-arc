@@ -28,6 +28,7 @@ module.exports = function (context) {
       quoteId: payload.priceListCode,
     }))
     .then(res => {
+      context.exec.setPriceListCode(payload.priceListCode);
       console.log(res);
       context.response.body = res;
       context.response.end();

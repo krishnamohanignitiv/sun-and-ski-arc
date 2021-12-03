@@ -15,5 +15,9 @@ module.exports = {
   priceListChange: {
     actionName: 'http.storefront.routes',
     customFunction: require('./domains/storefront/priceListChange')
+  },
+  branch_pickup_location: {
+    actionName: 'branch_pickup_location',
+    customFunction: require('./domains/storefront/branch_pickup_location')
   }
 };
