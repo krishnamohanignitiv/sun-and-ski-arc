@@ -55,6 +55,7 @@ module.exports = function (context, callback) {
 
     if (!quoteExtendedProperty) {
       console.log('No quote extendedProperty');
+      callback();
       // yotpoOrder.createOrder(yotpoPayload)
       //   .then(res => {
       //     console.log(res);
