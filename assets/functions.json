@@ -1,11 +1,6 @@
 {
   "exports": [
     {
-      "id": "embedded.commerce.carts.updateItem.before",
-      "virtualPath": "./dist\\commerce.carts.manifest.all.js",
-      "actionId": "embedded.commerce.carts.updateItem.before"
-    },
-    {
       "id": "embedded.commerce.orders.action.after",
       "virtualPath": "./dist\\commerce.orders.manifest.all.js",
       "actionId": "embedded.commerce.orders.action.after"
