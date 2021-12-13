@@ -24,6 +24,11 @@
       "id": "branch_pickup_location",
       "virtualPath": "./dist\\storefront.manifest.all.js",
       "actionId": "branch_pickup_location"
+    },
+    {
+      "id": "twilo_otp_send",
+      "virtualPath": "./dist\\storefront.manifest.all.js",
+      "actionId": "twilo_otp_send"
     }
   ]
 }

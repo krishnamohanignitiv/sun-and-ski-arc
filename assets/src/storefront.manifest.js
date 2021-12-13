@@ -19,5 +19,9 @@ module.exports = {
   branch_pickup_location: {
     actionName: 'branch_pickup_location',
     customFunction: require('./domains/storefront/branch_pickup_location')
+  },
+  twilo_otp_send: {
+    actionName: 'twilo_otp_send',
+    customFunction: require('./domains/storefront/twilio_otp_send')
   }
 };
