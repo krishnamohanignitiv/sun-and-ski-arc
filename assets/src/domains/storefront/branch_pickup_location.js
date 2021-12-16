@@ -226,7 +226,7 @@ module.exports = context => {
         }
       } else {
         context.response.body = {
-          message: 'Not available in the current store',
+          message: 'Item available for pickup in 2-4 weeks',
         };
         context.response.end();
       }
