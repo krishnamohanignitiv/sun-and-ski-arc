@@ -23,7 +23,17 @@
     {
       "id": "branch_pickup_location",
       "virtualPath": "./dist\\storefront.manifest.all.js",
-      "actionId": "branch_pickup_location"
+      "actionId": "http.storefront.routes"
+    },
+    {
+      "id": "twilio_otpSend",
+      "virtualPath": "./dist\\storefront.manifest.all.js",
+      "actionId": "http.storefront.routes"
+    },
+    {
+      "id": "twilio_otpVerify",
+      "virtualPath": "./dist\\storefront.manifest.all.js",
+      "actionId": "http.storefront.routes"
     }
   ]
 }

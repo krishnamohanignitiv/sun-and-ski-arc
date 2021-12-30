@@ -17,7 +17,23 @@ module.exports = {
     customFunction: require('./domains/storefront/priceListChange')
   },
   branch_pickup_location: {
-    actionName: 'branch_pickup_location',
+    actionName: 'http.storefront.routes',
     customFunction: require('./domains/storefront/branch_pickup_location')
+  },
+  twilio_otpSend: {
+    actionName: 'http.storefront.routes',
+    customFunction: require('./domains/storefront/twilio_otp_send')
+  },
+  twilio_otpVerify: {
+    actionName: 'http.storefront.routes',
+    customFunction: require('./domains/storefront/twilio_otp_verify')
   }
+  // twilo_otp_send: {
+  //   actionName: 'http.storefront.routes',
+  //   customFunction: require('./domains/storefront/twilio_otp_send')
+  // },
+  // twilo_otp_verify: {
+  //   actionName: 'http.storefront.routes',
+  //   customFunction: require('./domains/storefront/twilio_otp_verify')
+  // }
 };
