@@ -1,3 +1,7 @@
+/* eslint-disable indent */
+/* eslint-disable no-multiple-empty-lines */
+/* eslint-disable no-trailing-spaces */
+/* eslint-disable no-unused-vars */
 /* eslint-disable max-len */
 const ProductSDK = require('mozu-node-sdk/clients/commerce/catalog/storefront/product');
 const LocationSDK = require('mozu-node-sdk/clients/commerce/location');
@@ -18,8 +22,7 @@ module.exports = context => {
   // var pageURL = context.request.url;
   const { localStoreCode } = context.request.body;
   const { productCode } = context.request.body;
-  console.log(context.request.body.localStoreCode, '=>', localStoreCode,
-    context.request.body.productCode, '=>', productCode);
+  const { quantity } = context.request.body;
   const productSDK = new ProductSDK(context);
   const locationSDK = new LocationSDK(context);
   productSDK.context['user-claims'] = null;
@@ -68,7 +71,9 @@ module.exports = context => {
                   }).split(', ');
                   context.response.body = {
                     message: `Available to pick up Today If ordered By ${orderBefore}:00`,
-                    date: formattedToday
+                    date: formattedToday,
+                    allowPickup: true,
+                    quantity: quantity
                   };
                 } else {
                   const newDate = new Date(currentDate.setDate(currentDate.getDate() + 1)).toLocaleTimeString('en-US', {
@@ -79,7 +84,9 @@ module.exports = context => {
                   }).split(', ');
                   context.response.body = {
                     message: 'Available for pickup tomorrow',
-                    date: newDate
+                    date: newDate,
+                    allowPickup: true,
+                    quantity: quantity
                   };
                 }
               } else {
@@ -91,7 +98,9 @@ module.exports = context => {
                 }).split(', ');
                 context.response.body = {
                   message: 'Store closed today, available for pickup tomorrow',
-                  date: newDate
+                  date: newDate,
+                  allowPickup: false,
+                  quantity: quantity
                 };
               }
               context.response.end();
@@ -166,6 +175,9 @@ module.exports = context => {
                             context.response.body = {
                               message:
                                 `Avaiable for pickup in ${nearestNextPickupDay} days`,
+                              date: new Date(new Date().setDate(new Date().getDate() + nearestNextPickupDay)),
+                              allowPickup: true,
+                              quantity: quantity
                             };
                           }
                         } else {
@@ -194,13 +206,17 @@ module.exports = context => {
                           context.response.body = {
                             message:
                               `Avaiable for pickup on ${formattedMonth}/${formattedDate}`,
-                            date: formattedPickupDate
+                            date: formattedPickupDate,
+                            allowPickup: true,
+                            quantity: quantity
                           };
                         }
                         context.response.end();
                       } else {
                         context.response.body = {
                           message: 'Item available for pickup in 2-4 weeks',
+                          allowPickup: false,
+                          quantity: quantity
                         };
                         context.response.end();
                       }
@@ -214,6 +230,8 @@ module.exports = context => {
               } else {
                 context.response.body = {
                   message: 'Item available for pickup in 2-4 weeks',
+                  allowPickup: false,
+                  quantity: quantity
                 };
                 context.response.end();
               }
@@ -227,6 +245,8 @@ module.exports = context => {
       } else {
         context.response.body = {
           message: 'Item available for pickup in 2-4 weeks',
+          allowPickup: false,
+          quantity: quantity
         };
         context.response.end();
       }
