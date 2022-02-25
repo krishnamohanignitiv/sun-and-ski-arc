@@ -70,7 +70,7 @@ module.exports = context => {
                 console.log('closing params', closingHours, closingMins);
                 const closingTime = calculateClosingTime(closingHours, closingMins);
                 // localstore pickup possible
-                context.response.body = new ResponseObject(storeClosed, closingTimeString, localStoreStock, 0, 0, calculatePickupDate(closingTime), null);
+                context.response.body = new ResponseObject(storeClosed, closingTimeString, quantity, 0, 0, calculatePickupDate(closingTime), null);
               } else { // Closed Store
                 const newDate = new Date(currentDate.setDate(currentDate.getDate() + 1)).toLocaleTimeString('en-US', {
                   timeZone: 'EST',
