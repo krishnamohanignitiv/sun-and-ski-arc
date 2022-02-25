@@ -51,9 +51,8 @@ module.exports = context => {
     })
     .then(res => {
       if (res.totalCount > 0) {
-        console.log(res.items[0].stockAvailable);
-        if (res.items[0].stockAvailable >= quantity) {
-          const localStoreStock = res.items[0].stockAvailable;
+        const localStoreStock = res.items[0].stockAvailable;
+        if (localStoreStock >= quantity) {  
           console.log('Item Found in the local store');
           locationSDK
             .getLocation({
@@ -96,7 +95,6 @@ module.exports = context => {
             })
             .then(location => {
               // If store has a hub else it is a hub itself
-              const localStoreStock = res.items[0].stockAvailable;
               const storeClosed = location.regularHours[dayArr[currentDay]].isClosed;
               const closingTimeString = location.regularHours[dayArr[currentDay]].closeTime;
               const closingHours = parseInt(location.regularHours[dayArr[currentDay]].closeTime.substring(0, 2), 10);
