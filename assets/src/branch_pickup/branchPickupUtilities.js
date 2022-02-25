@@ -5,13 +5,25 @@ const moment = require('moment-timezone');
 // moment is for time calculations and momenttz is for timezone
 const timeZone = 'America/New_York';
 
+// day mapping
+const dayArr = [
+  'sunday',
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+];
+
 function calculateTransferDate(transferDay1, transferDay2, currentDay, transferTime) {
   let nearestNextPickupDay;
-  console.log(moment(new Date()).tz(timeZone).hour());
+  const current = moment(new Date()).tz(timeZone).valueOf();
+  console.log('transferTime', transferTime);
   if (
     currentDay === transferDay1 || currentDay === transferDay2) {
     console.log('today is transfer day');
-    if (moment(new Date()).tz(timeZone).valueOf() < transferTime) {
+    if (current < transferTime) {
       nearestNextPickupDay = 1;
     } else {
       if (currentDay === transferDay1) {
@@ -32,13 +44,50 @@ function calculateTransferDate(transferDay1, transferDay2, currentDay, transferT
       nearestNextPickupDay = transferDay1 - currentDay + 8;
     }
   }
-  return new Date(new Date().setDate(new Date().getDate() + nearestNextPickupDay)).toLocaleString('en-US');
+  return current + (3600 * 1000 * 24 * nearestNextPickupDay);
 }
 
 function calculatePickupDate(closingTime) {
-  const current = new Date();
-  console.log(current);
-  if (closingTime - moment(new Date()).tz(timeZone).valueOf() >= 3600000) return current.toLocaleString('en-US');
-  return new Date(new Date().setDate(new Date().getDate() + 1)).toLocaleString('en-US');
+  const current = moment(new Date()).tz(timeZone).valueOf();
+  if (closingTime - current >= 3600000) return current;
+  return current + (3600 * 1000 * 24 * 1);
 }
-module.exports = { calculateTransferDate: calculateTransferDate, calculatePickupDate: calculatePickupDate };
+
+function calculateClosingTime(closingHour, closingMin) {
+  const date = new Date(new Date().toLocaleString('en-US', { hour12: false }));
+  date.setHours(closingHour);
+  date.setMinutes(closingMin);
+  date.setSeconds(0);
+  return date.getTime();
+}
+function extractAttributes(attributes) {
+  const returnObj = {};
+  for (let i = 0; i < attributes.length; i++) {
+    if (attributes[i].attributeDefinition.attributeCode === 'transfer-day-2') {
+      returnObj.transferDay2 = dayArr.indexOf(
+        attributes[i].values[0].toLowerCase()
+      );
+    }
+    if (attributes[i].attributeDefinition.attributeCode === 'transfer-day-1') {
+      returnObj.transferDay1 = dayArr.indexOf(
+        attributes[i].values[0].toLowerCase()
+      );
+    }
+    if (attributes[i].attributeDefinition.attributeCode === 'hub-id') {
+      returnObj.hubId = attributes[i].values;
+    }
+    if (attributes[i].attributeDefinition.attributeCode === 'transfer-time') {
+      const transferTime = attributes[i].values[0].toString();
+      const transferHours = transferTime.length === 3 ? transferTime.substring(0, 1) : transferTime.substring(0, 2);
+      returnObj.transferHours = parseInt(transferHours, 10);
+      returnObj.transferMins = parseInt(transferTime.substring(2), 10);
+    }
+  }
+  return returnObj;
+}
+module.exports = {
+  calculateTransferDate: calculateTransferDate,
+  calculatePickupDate: calculatePickupDate,
+  calculateClosingTime: calculateClosingTime,
+  extractAttributes: extractAttributes
+};
