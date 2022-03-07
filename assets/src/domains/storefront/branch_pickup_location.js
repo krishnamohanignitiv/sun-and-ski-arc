@@ -114,7 +114,7 @@ module.exports = context => {
                     locationCodes: hubId[0],
                   })
                   .then(hubInventory => {
-                    const hubRequired = quantity - localStoreStock;
+                    const hubRequired = localStoreStock > 0 ? quantity - localStoreStock : quantity;
                     const hubStock = hubInventory.items[0].stockAvailable;
                     const transferTime = new Date(currentDate.toLocaleString('en-US', options));
                     transferTime.setHours(transferHours);
@@ -128,7 +128,7 @@ module.exports = context => {
                         context.response.body = new ResponseObject(storeClosed, closingTimeString, localStoreStock, hubRequired, 0, pickupDate, transferDate);
                         context.response.end();
                       } else {
-                        const unfulfilled = quantity - (hubStock + localStoreStock);
+                        const unfulfilled = localStoreStock > 0 ? quantity - (hubStock + localStoreStock) : quantity - hubStock;
                         context.response.body = new ResponseObject(storeClosed, closingTimeString, localStoreStock, hubStock, unfulfilled, pickupDate, transferDate);
                         context.response.end();
                       }
