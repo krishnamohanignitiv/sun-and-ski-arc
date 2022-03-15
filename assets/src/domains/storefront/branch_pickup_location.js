@@ -106,7 +106,7 @@ module.exports = context => {
                 const { transferHours } = attributes;
                 const { transferMins } = attributes;
                 const { hubId } = attributes;
-                if (hubId) {
+                if (hubId && hubId.length !== 0) {
                   productSDK
                     .getProductInventory({
                       productCode: productCode,
