@@ -27,6 +27,10 @@ module.exports = {
   twilio_otpVerify: {
     actionName: 'http.storefront.routes',
     customFunction: require('./domains/storefront/twilio_otp_verify')
+  },
+  calculate_CheckoutTotal: {
+    actionName: 'http.pages.checkout.before',
+    customFunction: require('./domains/storefront/calculateTotalCheckout')
   }
   // twilo_otp_send: {
   //   actionName: 'http.storefront.routes',
