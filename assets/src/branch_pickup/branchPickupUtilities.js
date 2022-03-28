@@ -37,7 +37,6 @@ function calculateTransferDate(transferDay1, transferDay2, currentDay, transferT
     console.log('today is not transfer day');
     if (currentDay < transferDay1) {
       nearestNextPickupDay = transferDay1 - currentDay + 1;
-      console.log(nearestNextPickupDay);
     } else if (currentDay < transferDay2) {
       nearestNextPickupDay = transferDay2 - currentDay + 1;
     } else {

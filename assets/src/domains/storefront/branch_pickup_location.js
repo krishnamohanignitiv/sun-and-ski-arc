@@ -66,7 +66,6 @@ module.exports = context => {
                 const closingTimeString = location.regularHours[dayArr[currentDay]].closeTime;
                 const closingHours = parseInt(location.regularHours[dayArr[currentDay]].closeTime.substring(0, 2), 10);
                 const closingMins = parseInt(location.regularHours[dayArr[currentDay]].closeTime.slice(-2), 10);
-                console.log('closing params', closingHours, closingMins);
                 const closingTime = calculateClosingTime(closingHours, closingMins);
                 // localstore pickup possible
                 context.response.body = new ResponseObject(storeClosed, closingTimeString, quantity, 0, 0, calculatePickupDate(closingTime), null);
@@ -107,38 +106,45 @@ module.exports = context => {
                 const { transferHours } = attributes;
                 const { transferMins } = attributes;
                 const { hubId } = attributes;
-                console.log(extractAttributes(location.attributes));
-                productSDK
-                  .getProductInventory({
-                    productCode: productCode,
-                    locationCodes: hubId[0],
-                  })
-                  .then(hubInventory => {
-                    const hubRequired = localStoreStock > 0 ? quantity - localStoreStock : quantity;
-                    const hubStock = hubInventory.items[0].stockAvailable;
-                    const transferTime = new Date(currentDate.toLocaleString('en-US', options));
-                    transferTime.setHours(transferHours);
-                    transferTime.setMinutes(transferMins);
-                    transferTime.setSeconds(0);
-                    if (hubInventory.totalCount > 0) {
+                if (hubId && hubId.length !== 0) {
+                  productSDK
+                    .getProductInventory({
+                      productCode: productCode,
+                      locationCodes: hubId[0],
+                    })
+                    .then(hubInventory => {
+                      const hubRequired = localStoreStock > 0 ? quantity - localStoreStock : quantity;
+                      const hubStock = hubInventory.items[0].stockAvailable;
+                      const transferTime = new Date(currentDate.toLocaleString('en-US', options));
+                      transferTime.setHours(transferHours);
+                      transferTime.setMinutes(transferMins);
+                      transferTime.setSeconds(0);
+                      if (hubInventory.totalCount > 0) {
                       // quantity to be changed to hubRequired
-                      const transferDate = calculateTransferDate(transferDay1, transferDay2, currentDay, transferTime.getTime());
-                      const pickupDate = localStoreStock !== 0 ? calculatePickupDate(closingTime) : null;
-                      if (hubStock >= hubRequired) {
-                        context.response.body = new ResponseObject(storeClosed, closingTimeString, localStoreStock, hubRequired, 0, pickupDate, transferDate);
-                        context.response.end();
-                      } else {
-                        const unfulfilled = localStoreStock > 0 ? quantity - (hubStock + localStoreStock) : quantity - hubStock;
-                        context.response.body = new ResponseObject(storeClosed, closingTimeString, localStoreStock, hubStock, unfulfilled, pickupDate, transferDate);
-                        context.response.end();
+                        const transferDate = calculateTransferDate(transferDay1, transferDay2, currentDay, transferTime.getTime());
+                        const pickupDate = localStoreStock !== 0 ? calculatePickupDate(closingTime) : null;
+                        if (hubStock >= hubRequired) {
+                          context.response.body = new ResponseObject(storeClosed, closingTimeString, localStoreStock, hubRequired, 0, pickupDate, transferDate);
+                          context.response.end();
+                        } else {
+                          const unfulfilled = localStoreStock > 0 ? quantity - (hubStock + localStoreStock) : quantity - hubStock;
+                          context.response.body = new ResponseObject(storeClosed, closingTimeString, localStoreStock, hubStock, unfulfilled, pickupDate, transferDate);
+                          context.response.end();
+                        }
                       }
-                    }
-                  })
-                  .catch(err => {
-                    console.log(err, 'Errors');
-                    context.response.body = err.originalError.message;
-                    context.response.end();
-                  });
+                    })
+                    .catch(err => {
+                      console.log(err, 'Errors');
+                      context.response.body = err.originalError.message;
+                      context.response.end();
+                    });
+                } else {
+                  console.log('its a hub');
+                  const unfulfilled = quantity - localStoreStock;
+                  const pickupDate = calculatePickupDate(closingTime);
+                  context.response.body = new ResponseObject(storeClosed, closingTimeString, localStoreStock, 0, unfulfilled, pickupDate, null);
+                  context.response.end();
+                }
               } else {
                 context.response.body = new ResponseObject(storeClosed, null, 0, 0, quantity, null, null);
                 context.response.end();
