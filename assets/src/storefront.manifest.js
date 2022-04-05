@@ -28,10 +28,10 @@ module.exports = {
     actionName: 'http.storefront.routes',
     customFunction: require('./domains/storefront/twilio_otp_verify')
   },
-  calculate_CheckoutTotal: {
-    actionName: 'http.pages.checkout.before',
-    customFunction: require('./domains/storefront/calculateTotalCheckout')
-  }
+  productSurcharge: {
+    actionName: 'http.commerce.catalog.storefront.products.getProduct.after',
+    customFunction: require('./domains/storefront/productSurcharge')
+  },
   // twilo_otp_send: {
   //   actionName: 'http.storefront.routes',
   //   customFunction: require('./domains/storefront/twilio_otp_send')
