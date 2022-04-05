@@ -27,7 +27,11 @@ module.exports = {
   twilio_otpVerify: {
     actionName: 'http.storefront.routes',
     customFunction: require('./domains/storefront/twilio_otp_verify')
-  }
+  },
+  productSurcharge: {
+    actionName: 'http.commerce.catalog.storefront.products.getProduct.after',
+    customFunction: require('./domains/storefront/productSurcharge')
+  },
   // twilo_otp_send: {
   //   actionName: 'http.storefront.routes',
   //   customFunction: require('./domains/storefront/twilio_otp_send')
