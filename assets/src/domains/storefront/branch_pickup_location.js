@@ -128,7 +128,7 @@ module.exports = context => {
                           context.response.end();
                         } else {
                           const unfulfilled = localStoreStock > 0 ? quantity - (hubStock + localStoreStock) : quantity - hubStock;
-                          context.response.body = new ResponseObject(storeClosed, closingTimeString, localStoreStock, hubStock, unfulfilled, pickupDate, transferDate);
+                          context.response.body = new ResponseObject(storeClosed, closingTimeString, localStoreStock >= 0 ? localStoreStock : 0, hubStock, unfulfilled, pickupDate, transferDate);
                           context.response.end();
                         }
                       }
