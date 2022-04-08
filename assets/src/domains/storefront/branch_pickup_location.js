@@ -60,6 +60,7 @@ module.exports = context => {
 
   function main() {
     fetchProductInventory(localStoreCode).then(res => {
+      console.log(res);
       if (res.totalCount > 0) {
         const localStoreStock = res.items[0].stockAvailable;
         if (localStoreStock >= quantity) {  
@@ -69,19 +70,24 @@ module.exports = context => {
             const storeClosed = location.regularHours[dayArr[currentDay]].isClosed;
             if (!storeClosed) {
               const closingTimeString = location.regularHours[dayArr[currentDay]].closeTime;
-              const closingHours = parseInt(location.regularHours[dayArr[currentDay]].closeTime.substring(0, 2), 10);
+              const closingHours = parseInt(location.regularHours[dayArr[currentDay]].closeTime.slice(0, 2), 10);
               const closingMins = parseInt(location.regularHours[dayArr[currentDay]].closeTime.slice(-2), 10);
               const closingTime = calculateClosingTime(closingHours, closingMins);
               // localstore pickup possible
               context.response.body = new ResponseObject(storeClosed, closingTimeString, quantity, 0, 0, calculatePickupDate(closingTime), null);
             } else { // Closed Store
-              const newDate = new Date(currentDate.setDate(currentDate.getDate() + 1)).toLocaleTimeString('en-US', {
+              let counter = 1;
+              while (location.regularHours[dayArr[(currentDay + counter) % 7]].isClosed) {
+                counter++;
+              }
+              const closingTimeString = location.regularHours[dayArr[(currentDay + counter) % 7]].closeTime;
+              const newDate = new Date(currentDate.setDate(currentDate.getDate() + counter)).toLocaleTimeString('en-US', {
                 timeZone: 'EST',
                 day: 'numeric',
                 month: 'numeric',
                 year: 'numeric',
               }).split(', ');
-              context.response.body = new ResponseObject(storeClosed, null, quantity, 0, 0, newDate, null);
+              context.response.body = new ResponseObject(storeClosed, closingTimeString, quantity, 0, 0, newDate, null);
             }
             context.response.end();
           })
@@ -95,17 +101,28 @@ module.exports = context => {
           fetchLocation(localStoreCode).then(location => {
             // If store has a hub else it is a hub itself
             const storeClosed = location.regularHours[dayArr[currentDay]].isClosed;
-            const closingTimeString = location.regularHours[dayArr[currentDay]].closeTime;
-            const closingHours = parseInt(location.regularHours[dayArr[currentDay]].closeTime.substring(0, 2), 10);
-            const closingMins = parseInt(location.regularHours[dayArr[currentDay]].closeTime.slice(-2), 10);
-            const closingTime = calculateClosingTime(closingHours, closingMins);
+            console.log(storeClosed);
+            let counter = 1;
+            while (location.regularHours[dayArr[(currentDay + counter) % 7]].isClosed) {
+              counter++;
+            }
+            let closingTimeString;
+            let closingHours;
+            let closingMins;
+            let closingTime;
+            if (!storeClosed) {
+              closingTimeString = location.regularHours[dayArr[currentDay]].closeTime;
+              closingHours = parseInt(closingTimeString.slice(0, 2), 10);
+              closingMins = parseInt(closingTimeString.slice(-2), 10);
+              closingTime = calculateClosingTime(closingHours, closingMins);
+            } else {
+              closingTimeString = location.regularHours[dayArr[(currentDay + counter) % 7]].closeTime;
+            }
             if (location.attributes.length) {
               const attributes = extractAttributes(location.attributes);
-              const { transferDay1 } = attributes;
-              const { transferDay2 } = attributes;
-              const { transferHours } = attributes;
-              const { transferMins } = attributes;
-              const { hubId } = attributes;
+              const {
+                transferDay1, transferDay2, transferHours, transferMins, hubId 
+              } = attributes;
               if (hubId && hubId.length !== 0) {
                 fetchProductInventory(hubId[0]).then(hubInventory => {
                   const hubRequired = localStoreStock > 0 ? quantity - localStoreStock : quantity;
@@ -117,7 +134,16 @@ module.exports = context => {
                   if (hubInventory.totalCount > 0) {
                     // quantity to be changed to hubRequired
                     const transferDate = calculateTransferDate(transferDay1, transferDay2, currentDay, transferTime.getTime());
-                    const pickupDate = localStoreStock !== 0 ? calculatePickupDate(closingTime) : null;
+                    let pickupDate;
+                    if (!storeClosed) pickupDate = localStoreStock !== 0 ? calculatePickupDate(closingTime) : null;
+                    else {
+                      pickupDate = new Date(currentDate.setDate(currentDate.getDate() + counter)).toLocaleTimeString('en-US', {
+                        timeZone: 'EST',
+                        day: 'numeric',
+                        month: 'numeric',
+                        year: 'numeric',
+                      }).split(', ');
+                    }
                     if (hubStock >= hubRequired) {
                       context.response.body = new ResponseObject(storeClosed, closingTimeString, localStoreStock, hubRequired, 0, pickupDate, transferDate);
                       context.response.end();
@@ -165,9 +191,3 @@ module.exports = context => {
   
   main();
 };
-// {
-//   message: 'Item available for pickup in 2-4 weeks',
-//   quantity: quantity,
-//   condition: 7,
-//   allowPickup: false
-// };
