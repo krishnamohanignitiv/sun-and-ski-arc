@@ -1,14 +1,23 @@
 const ProductSDK = require('mozu-node-sdk/clients/commerce/catalog/admin/product');
 const ProductExtrasSDK = require('mozu-node-sdk/clients/commerce/catalog/admin/products/productExtra');
 const ProductStorefrontSDK = require('mozu-node-sdk/clients/commerce/catalog/storefront/product');
+const EntitySDK = require('mozu-node-sdk/clients/platform/entitylists/entity');
 
 module.exports = (context, callback) => {
   const productSDK = new ProductSDK(context);
   const productExtrasSDK = new ProductExtrasSDK(context);
   const productStorefrontSDK = new ProductStorefrontSDK(context);
+  const entitySDK = new EntitySDK(context);
   productSDK.context['user-claims'] = null;
   productExtrasSDK.context['user-claims'] = null;
   productStorefrontSDK.context['user-claims'] = null;
+  entitySDK.context['user-claims'] = null;
+
+  const entityListFullName = 'surchargeproductlist@coscon';
+  const entitytyId = 'productSurchargeList1';
+  function getEntityList() {
+    return entitySDK.getEntity({ entityListFullName: entityListFullName, id: entitytyId });
+  }
 
   function createPayload(newValue) {
     return {
@@ -23,9 +32,12 @@ module.exports = (context, callback) => {
     };
   }
 
-  function fetchSurchargeValue(properties) {
+  function fetchSurchargeValue(properties, surchargeProductsList) {
     const property = properties.filter(prop => prop.attributeFQN === 'tenant~surchargeproductcode');
-    return property.length > 0 ? property[0].values[0].value : null;
+    const surchargeProductCode = property.length > 0 ? property[0].values[0].value : null;
+    if (surchargeProductCode === null) return null;
+    const productIndex = surchargeProductsList.findIndex(pdt => pdt.productCode === surchargeProductCode);
+    return surchargeProductsList[productIndex].surchargeValue;
   }
 
   function calculateSurcharge(price, surcharge) {
@@ -48,17 +60,20 @@ module.exports = (context, callback) => {
 
   function main() {
     const { productCode } = context.request.params;
-    getProduct(productCode).then(product => {
-      const productPrice = product.price.salePrice && product.price.salePrice !== 0
-        ? product.price.salePrice : product.price.price;
-      const { properties } = product;
-      const surchargeValue = fetchSurchargeValue(properties);
-      if (surchargeValue === null) {
-        callback();
-      }
-      const newSurchargeValue = calculateSurcharge(productPrice, surchargeValue);
-      updateExtras(productCode, newSurchargeValue).then(() => {
-        callback();
+    getEntityList().then(res => {
+      const { productList } = res;
+      getProduct(productCode).then(product => {
+        const productPrice = product.price.salePrice && product.price.salePrice !== 0
+          ? product.price.salePrice : product.price.price;
+        const { properties } = product;
+        const surchargeValue = fetchSurchargeValue(properties, productList);
+        if (surchargeValue === null) {
+          callback();
+        }
+        const newSurchargeValue = calculateSurcharge(productPrice, surchargeValue);
+        updateExtras(productCode, newSurchargeValue).then(() => {
+          callback();
+        });
       });
     });
   }
