@@ -14,8 +14,7 @@ module.exports = (context, callback) => {
   entitySDK.context['user-claims'] = null;
 
   const entityListFullName = 'surchargeproductlist@coscon';
-  const entitytyId = 'productSurchargeList1';
-  function getEntityList() {
+  function getEntityList(entitytyId) {
     return entitySDK.getEntity({ entityListFullName: entityListFullName, id: entitytyId });
   }
 
@@ -32,15 +31,15 @@ module.exports = (context, callback) => {
     };
   }
 
-  function fetchSurchargeValue(properties, surchargeProductsList) {
+  function fetchSurchargeValue(properties) {
     const property = properties.filter(prop => prop.attributeFQN === 'tenant~surchargeproductcode');
     const surchargeProductCode = property.length > 0 ? property[0].values[0].value : null;
     if (surchargeProductCode === null) return null;
-    const productIndex = surchargeProductsList.findIndex(pdt => pdt.productCode === surchargeProductCode);
-    return surchargeProductsList[productIndex].surchargeValue;
+    return getEntityList(surchargeProductCode);
   }
 
   function calculateSurcharge(price, surcharge) {
+    console.log(surcharge, price);
     return price * (surcharge / 100);
   }
 
@@ -60,16 +59,17 @@ module.exports = (context, callback) => {
 
   function main() {
     const { productCode } = context.request.params;
-    getEntityList().then(res => {
-      const { productList } = res;
-      getProduct(productCode).then(product => {
-        const productPrice = product.price.salePrice && product.price.salePrice !== 0
-          ? product.price.salePrice : product.price.price;
-        const { properties } = product;
-        const surchargeValue = fetchSurchargeValue(properties, productList);
-        if (surchargeValue === null) {
-          callback();
-        }
+    getProduct(productCode).then(product => {
+      const productPrice = product.price.salePrice && product.price.salePrice !== 0
+        ? product.price.salePrice : product.price.price;
+      const { properties } = product;
+      const surchargeObject = fetchSurchargeValue(properties);
+      if (surchargeObject === null) {
+        callback();
+      }
+      surchargeObject.then(res => {
+        const { surchargeValue } = res;
+        console.log(surchargeValue);
         const newSurchargeValue = calculateSurcharge(productPrice, surchargeValue);
         updateExtras(productCode, newSurchargeValue).then(() => {
           callback();
