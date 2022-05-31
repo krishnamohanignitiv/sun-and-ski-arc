@@ -36,20 +36,15 @@ module.exports = context => {
     }
   }
 
-  function fetchProductInventory(locationCode) {
-    return productSDK.getProductInventory({
-      productCode: productCode,
-      locationCodes: locationCode
-    });
-  }
+  const fetchProductInventory = locationCode => productSDK.getProductInventory({
+    productCode: productCode,
+    locationCodes: locationCode
+  });
 
-  function fetchLocation(locationCode) {
-    return locationSDK
-      .getLocation({
-        locationCode: locationCode,
-        includeAttributeDefinition: true,
-      });
-  }
+  const fetchLocation = locationCode => locationSDK.getLocation({
+    locationCode: locationCode,
+    includeAttributeDefinition: true,
+  });
 
   const currentDate = new Date();
   const currentDay = currentDate.getDay();
@@ -58,9 +53,37 @@ module.exports = context => {
     hour12: false,
   };
 
+  const hubLogic = locationAttributes => {
+    const {
+      transferDay1, transferDay2, transferHours, transferMins, hubId 
+    } = locationAttributes;
+    console.log(transferDay1, transferDay2, transferHours, transferMins);
+    if (hubId && hubId.length > 0) {
+      fetchProductInventory(hubId).then(res => {
+        console.log(res);
+        let response;
+        if (res.totalCount > 0) {
+          const transferTime = new Date(currentDate.toLocaleString('en-US', options));
+          transferTime.setHours(transferHours);
+          transferTime.setMinutes(transferMins);
+          transferTime.setSeconds(0);
+          const transferDate = calculateTransferDate(transferDay1, transferDay2, currentDay, transferTime.getTime());
+          if (res.items[0].stockAvailable > quantity) {
+            console.log('transfer possible completely');
+            response = new ResponseObject(false, null, 0, quantity, 0, null, transferDate);
+          } else {
+            console.log('transfer possible partially');
+            response = new ResponseObject(false, null, 0, res.items[0].stockAvailable, quantity - res.items[0].stockAvailable, null, transferDate);
+          }
+          context.response.body = response;
+          context.response.end();
+        }
+      });
+    }
+  };
+
   function main() {
     fetchProductInventory(localStoreCode).then(res => {
-      console.log(res);
       if (res.totalCount > 0) {
         const localStoreStock = res.items[0].stockAvailable;
         if (localStoreStock >= quantity) {  
@@ -178,8 +201,11 @@ module.exports = context => {
             });
         }
       } else {
-        context.response.body = new ResponseObject(true, null, 0, 0, quantity, null, null);
-        context.response.end();
+        console.log(res);
+        fetchLocation(localStoreCode).then(location => {
+          const locationAttributes = extractAttributes(location.attributes);
+          hubLogic(locationAttributes);
+        });
       }
     })
       .catch(err => {
