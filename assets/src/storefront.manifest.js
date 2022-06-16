@@ -32,6 +32,10 @@ module.exports = {
     actionName: 'http.commerce.catalog.storefront.products.getProduct.after',
     customFunction: require('./domains/storefront/productSurcharge')
   },
+  getAllCategories: {
+    actionName: 'http.storefront.routes',
+    customFunction: require('./domains/storefront/getAllCategories')
+  }
   // twilo_otp_send: {
   //   actionName: 'http.storefront.routes',
   //   customFunction: require('./domains/storefront/twilio_otp_send')
