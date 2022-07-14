@@ -14,7 +14,7 @@ module.exports = function (context) {
   // const reqURL = url.parse(context.request.href);
   // eslint-disable-next-line prefer-object-spread
   const payload = Object.assign({}, context.request.body);
-  // console.log(payload);
+  console.log('payload received', payload);
   const client = new Client({
     context: {
       appKey: 'CosCon.coastal_registration.1.0.0.Release',
@@ -28,8 +28,12 @@ module.exports = function (context) {
   const b2bAccount = new B2bAccountSDK(client);
 
   let p21AccountId;
+  // let kiboRegion;
+  // let Size;
+  // let Industry;
 
   const requiredData = {};
+  console.log('requiredData', requiredData);
   /**
    * All async functions
    */
@@ -45,6 +49,9 @@ module.exports = function (context) {
         Object.assign(res, JSON.parse(res.text));
         return {
           accountId: res.data.customer_id,
+          // kibo_region: res.data.class_4id,
+          // size: res.data.class_3id,
+          // industry: res.data.class_1id,
           companyOrOrganization: res.data.customer_name,
           address1: res.data.resources.customersBilltos[0].phys_address1,
           address2: res.data.resources.customersBilltos[0].phys_address2,
@@ -84,20 +91,20 @@ module.exports = function (context) {
       });
   }
 
-  // async function makeB2BAccount(accountInfo) {
+  // async function updateB2BAccount(accountInfo) {
   //   return superagent
-  //     .post(
+  //     .get(
   //       `https://${reqURL.hostname}/coastal/api/commerce/customer/b2baccounts`
   //     )
   //     .send(accountInfo);
-  //   // .then(() => {
-  //   //   console.log('B2B new Account Custom Function Success');
-  //   // })
-  //   // .catch(err => {
-  //   //   console.log('Error Block');
-  //   //   console.log(err.response.text);
-  //   //   throw new Error(err.response.text);
-  //   // });
+  //   .then(() => {
+  //     console.log('B2B new Account Custom Function Success');
+  //   })
+  //   .catch(err => {
+  //     console.log('Error Block');
+  //     console.log(err.response.text);
+  //     throw new Error(err.response.text);
+  //   });
   // }
   async function validateExistingAccount(accountNumber) {
     return b2bAccount.getB2BAccounts({
@@ -110,6 +117,7 @@ module.exports = function (context) {
   validateExistingAccount(payload.accountNumber)
     .then(
       res => new Promise((resolve, reject) => {
+        console.log('Response Code', res);
         if (res.totalCount === 0) {
           resolve('Account does not exist');
         }
@@ -119,13 +127,14 @@ module.exports = function (context) {
     .then(() => Promise.all([customerValidate(), invoiceValidate()]))
     .then(res => {
       res.forEach(validationItem => {
+        console.log('Validation Item', validationItem);
         if (Array.isArray(validationItem)) {
           requiredData.invoices = validationItem;
         } else {
           Object.assign(requiredData, validationItem);
         }
       });
-
+      console.log('requreData', requiredData);
       if (requiredData.accountId !== payload.accountNumber || requiredData.postalOrZipCode !== payload.billingZip) {
         throw new Error('Account not validated for Customer Account');
       }
@@ -140,10 +149,14 @@ module.exports = function (context) {
     })
     .then(() => {
       const {
+        // eslint-disable-next-line max-len
         accountId, companyOrOrganization, address1, address2, cityOrTown, stateOrProvince, postalOrZipCode, countryCode
       } = requiredData;
 
       p21AccountId = accountId;
+      // kiboRegion = kibo_region;
+      // Size = size;
+      // Industry = industry;
       // const invoiceLength = requiredData.invoiceValidated.data.length - 1;
       // eslint-disable-next-line eqeqeq
       // if (requiredData.invoiceValidated.data[invoiceLength].total_amount == payload.lastInvoice) {
@@ -190,6 +203,15 @@ module.exports = function (context) {
       //   context.response.end();
       //   return;
       // }
+      // const kiboRegion = {
+      //   kibo_region: kibo_region
+      // };
+      // const Size = {
+      //   size: size
+      // };
+      // const Industry = {
+      //   industry: industry
+      // };
       const accountPayload = {
         users: [
           {
@@ -200,6 +222,9 @@ module.exports = function (context) {
             localecode: 'en-US',
           },
         ],
+        // kiboRegion: stateOrProvince,
+        // Size: size,
+        // Industry: industry,
         companyOrOrganization: companyOrOrganization,
         accountType: 'B2B',
         isActive: true,
@@ -235,12 +260,18 @@ module.exports = function (context) {
       ];
       // eslint-disable-next-line prefer-object-spread
       return B2bAccountCreate.b2bAccountflow(tempClient, accountPayload,
-        { p21AccountId, billingAddress });
+        {
+          p21AccountId,
+          billingAddress,
+          // kibo_region: requiredData.kibo_region,
+          // size: requiredData.size,
+          // industry: requiredData.industry
+        });
       // return makeB2BAccount({ payload: accountPayload, p21AccountId });
       // throw new Error('Account not validated for Invoice Account');
     })
     .then(res => {
-      console.log(res);
+      console.log('after update of attributes', res);
       if (res instanceof Error) {
         return Promise.reject(res);
       }
