@@ -1,16 +1,10 @@
-const ProductSDK = require('mozu-node-sdk/clients/commerce/catalog/admin/product');
 const ProductExtrasSDK = require('mozu-node-sdk/clients/commerce/catalog/admin/products/productExtra');
-const ProductStorefrontSDK = require('mozu-node-sdk/clients/commerce/catalog/storefront/product');
 const EntitySDK = require('mozu-node-sdk/clients/platform/entitylists/entity');
 
 module.exports = (context, callback) => {
-  const productSDK = new ProductSDK(context);
   const productExtrasSDK = new ProductExtrasSDK(context);
-  const productStorefrontSDK = new ProductStorefrontSDK(context);
   const entitySDK = new EntitySDK(context);
-  productSDK.context['user-claims'] = null;
   productExtrasSDK.context['user-claims'] = null;
-  productStorefrontSDK.context['user-claims'] = null;
   entitySDK.context['user-claims'] = null;
 
   const entityListFullName = 'surchargeproductlist@coscon';
@@ -39,14 +33,7 @@ module.exports = (context, callback) => {
   }
 
   function calculateSurcharge(price, surcharge) {
-    console.log(surcharge, price);
     return price * (surcharge / 100);
-  }
-
-  function getProduct(productCode) {
-    return productSDK.getProduct({
-      productCode: productCode
-    });
   }
 
   function updateExtras(productCode, newValue) {
@@ -59,21 +46,21 @@ module.exports = (context, callback) => {
 
   function main() {
     const { productCode } = context.request.params;
-    getProduct(productCode).then(product => {
-      const productPrice = product.price.salePrice && product.price.salePrice !== 0
-        ? product.price.salePrice : product.price.price;
-      const { properties } = product;
-      const surchargeObject = fetchSurchargeValue(properties);
-      if (surchargeObject === null) {
+    const responseBody = context.response.body;
+    const { price } = responseBody;
+    const { properties } = responseBody;
+    const productPrice = price.salePrice && price.salePrice !== 0
+      ? price.salePrice : price.price;
+    const surchargeObject = fetchSurchargeValue(properties);
+    console.log(surchargeObject);
+    if (surchargeObject === null) {
+      callback();
+    }
+    surchargeObject.then(res => {
+      const { surchargeValue } = res;
+      const newSurchargeValue = calculateSurcharge(productPrice, surchargeValue);
+      updateExtras(productCode, newSurchargeValue).then(() => {
         callback();
-      }
-      surchargeObject.then(res => {
-        const { surchargeValue } = res;
-        console.log(surchargeValue);
-        const newSurchargeValue = calculateSurcharge(productPrice, surchargeValue);
-        updateExtras(productCode, newSurchargeValue).then(() => {
-          callback();
-        });
       });
     });
   }
