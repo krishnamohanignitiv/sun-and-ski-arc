@@ -1,68 +1,121 @@
-const ProductExtrasSDK = require('mozu-node-sdk/clients/commerce/catalog/admin/products/productExtra');
-const EntitySDK = require('mozu-node-sdk/clients/platform/entitylists/entity');
+const OrderItemSDK = require('mozu-node-sdk/clients/commerce/orders/orderItem');
 
 module.exports = (context, callback) => {
-  const productExtrasSDK = new ProductExtrasSDK(context);
-  const entitySDK = new EntitySDK(context);
-  productExtrasSDK.context['user-claims'] = null;
-  entitySDK.context['user-claims'] = null;
+  const orderItemSdk = new OrderItemSDK(context);
+  orderItemSdk.context['user-claims'] = null;
+  const SURCHARGEFQN = 'tenant~surcharge';
 
-  const entityListFullName = 'surchargeproductlist@coscon';
-  function getEntityList(entitytyId) {
-    return entitySDK.getEntity({ entityListFullName: entityListFullName, id: entitytyId });
-  }
+  const getAllOrderItems = orderId => orderItemSdk.getOrderItems({
+    orderId: orderId
+  });
 
-  function createPayload(newValue) {
-    return {
-      attributeFQN: 'tenant~surcharge',
-      values: [
-        {
-          deltaPrice: {
-            deltaPrice: newValue
-          }
-        }
-      ]
-    };
-  }
+  const updateItemPrice = payload => new Promise((resolve, reject) => {
+    orderItemSdk.updateItemProductPrice(payload).then(res => resolve(res)).catch(e => {
+      console.log(e);
+      reject(e);
+    });
+  });
 
-  function fetchSurchargeValue(properties) {
-    const property = properties.filter(prop => prop.attributeFQN === 'tenant~surchargeproductcode');
-    const surchargeProductCode = property.length > 0 ? property[0].values[0].value : null;
-    if (surchargeProductCode === null) return null;
-    return getEntityList(surchargeProductCode);
-  }
+  const createPayload = (orderId, itemId, newPrice) => ({
+    orderId: orderId, orderItemId: itemId, price: newPrice, updatemode: 'ApplyToOriginal'
+  });
 
-  function calculateSurcharge(price, surcharge) {
-    return price * (surcharge / 100);
-  }
+  const getSurcharge = options => options.filter(o => o.attributeFQN === SURCHARGEFQN)[0];
 
-  function updateExtras(productCode, newValue) {
-    const payload = createPayload(newValue);
-    return productExtrasSDK.updateExtra({
-      productCode: productCode,
-      attributeFQN: 'tenant~surcharge'
-    }, { body: payload });
-  }
+  const calculateNewPrice = product => {
+    const { options, price } = product;
+    const { shopperEnteredValue } = getSurcharge(options);
+    const surchargeValue = parseFloat(shopperEnteredValue);
+    return price.salePrice ? price.salePrice + surchargeValue : price.price + surchargeValue;
+  };
 
-  function main() {
-    const { productCode } = context.request.params;
-    const responseBody = context.response.body;
-    const { price } = responseBody;
-    const { properties } = responseBody;
-    const productPrice = price.salePrice && price.salePrice !== 0
-      ? price.salePrice : price.price;
-    const surchargeObject = fetchSurchargeValue(properties);
-    console.log(surchargeObject);
-    if (surchargeObject === null) {
-      callback();
-    }
-    surchargeObject.then(res => {
-      const { surchargeValue } = res;
-      const newSurchargeValue = calculateSurcharge(productPrice, surchargeValue);
-      updateExtras(productCode, newSurchargeValue).then(() => {
+  const main = () => {
+    const { url } = context.request;
+    const orderId = url.split('/')[url.split('/').length - 1];
+    getAllOrderItems(orderId).then(res => {
+      const promises = [];
+      res.items.forEach(item => {
+        const { product } = item;
+        promises.push(updateItemPrice(createPayload(orderId, item.id, calculateNewPrice(product))));
+        // callback();
+      });
+      Promise.all(promises).then(response => {
+        console.log(response);
         callback();
       });
+    }).catch(e => {
+      console.log(e);
+      callback();
     });
+  };
+
+  try {
+    main();
+  } catch (e) {
+    console.log(e);
+    callback();
   }
-  main();
 };
+
+// var _ = require('underscore');
+// var appsClient = require('mozu-node-sdk/clients/platform/application')();
+// var orderItemClient = require('mozu-node-sdk/clients/commerce/orders/orderItem');
+// module.exports = function(context, callback) {
+
+//   console.log(context.request);
+//   var orderId = context.request.path.split('/checkout/')[1];
+//   console.log('order id - ',orderId);
+
+//   var orderItemResource = orderItemClient(context.apiContext);
+//     orderItemResource.context["user-claims"] = null;
+
+//   var finalItems = [], ehfOption;
+//   orderItemResource.getOrderItems({orderId:orderId}).then(function(data){
+//     for(var i=0; i < data.items.length; i++){
+//       ehfOption = _.find(data.items[i].product.options, function(option){
+//         return option.attributeFQN === 'tenant~ehf-fees';
+//       });
+//       if(ehfOption && data.items[i].fulfillmentMethod === 'Pickup') {
+//         console.log('promise created for - ',data.items[i].product.productCode);
+//         finalItems.push(createItemPromise(orderId, data.items[i]));
+//       }
+//     }
+//     console.log(finalItems.length);
+//     if(finalItems.length > 0 ){
+//       Promise.all(finalItems).then(function(response){
+//         console.log('All Promises resolved');
+//         callback();
+//       });
+//     }else {
+//       console.log('No products with EHF');
+//       callback();
+//     }
+//   });
+
+//   var createItemPromise = function(orderId, item){
+//     var newItemPrice;
+//     if(ehfOption){
+//       var ehfprice = parseFloat(ehfOption.shopperEnteredValue);
+//       var itemEHFTotal = ehfprice;
+//       console.log('Item ehfTotal - ',itemEHFTotal);
+//       if(item.product.price.salePrice){
+//         newItemPrice = parseFloat(item.product.price.salePrice + itemEHFTotal).toFixed(2);
+//       }else{
+//         newItemPrice = parseFloat(item.product.price.price + itemEHFTotal).toFixed(2);
+//       }
+//     }
+//     return new Promise(function(resolve, reject){
+//       orderItemResource.updateItemProductPrice({
+//       orderId:orderId,
+//       orderItemId:item.id,
+//       price:newItemPrice,updatemode:'ApplyToOriginal'}).then(
+//       function(response){
+//         resolve(response);
+//       }).catch(function(err){
+//         console.log('err');
+//         console.log(err);
+//         reject(err);
+//       });
+//     });
+//   };
+// };
