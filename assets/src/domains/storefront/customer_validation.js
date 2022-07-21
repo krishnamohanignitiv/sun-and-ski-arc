@@ -1,9 +1,11 @@
+/* eslint-disable max-len */
 // const request = require('requests');
 // const fetch1 = require('node-fetch');
 // const url = require('url');
 const superagent = require('superagent');
 const Client = require('mozu-node-sdk/clients/platform/application');
 const B2bAccountSDK = require('../../../resources/b2bAccount');
+// const LocationSDK = require('../../../resources/location');
 const B2BAccount = require('../../utilities/b2bAccountCreationPipeline');
 // const AccountCreation = require('../../utilities/b2bAccountCreationPipeline');
 
@@ -26,11 +28,12 @@ module.exports = function (context) {
 
   client.context['user-claims'] = null;
   const b2bAccount = new B2bAccountSDK(client);
-
+  // const b2bLocation = new LocationSDK(client);
+  // console.log('b2bLocation', b2bLocation);
   let p21AccountId;
-  // let kiboRegion;
-  // let Size;
-  // let Industry;
+  let Industry;
+  let Size;
+  let kiboRegion;
 
   const requiredData = {};
   console.log('requiredData', requiredData);
@@ -48,10 +51,11 @@ module.exports = function (context) {
         console.log('SimpleApps Customer API Working');
         Object.assign(res, JSON.parse(res.text));
         return {
+          // eslint-disable-next-line radix
           accountId: res.data.customer_id,
-          // kibo_region: res.data.class_4id,
-          // size: res.data.class_3id,
-          // industry: res.data.class_1id,
+          industry: res.data.class_1id,
+          size: res.data.class_3id,
+          kibo_region: res.data.resources.customersControl[0].source_location_id,
           companyOrOrganization: res.data.customer_name,
           address1: res.data.resources.customersBilltos[0].phys_address1,
           address2: res.data.resources.customersBilltos[0].phys_address2,
@@ -67,29 +71,29 @@ module.exports = function (context) {
         throw new Error('SimpleApps Customer API error');
       });
   }
-  async function invoiceValidate() {
-    return superagent
-      .get(
-        `https://api.simpleapps.net/ecommerce/invoices?resource_list=all&customer_id=${payload.accountNumber}`
-      )
-      .query({
-        resource_list: 'all',
-        siteid: 'coastalone',
-        customer_id: payload.accountNumber,
-        limit: 5,
-      })
-      .set('x-api-key', '020A1B0AD2E19A2C13931F6744BC52C096FF5BB0')
-      .then(res => {
-        console.log('SimpleApps Invoice Api Working');
-        Object.assign(res, JSON.parse(res.text));
-        return res.data.map(invoice => invoice.total_amount);
-      })
-      .catch(err => {
-        console.log('SimpleApps Invoice API Error');
-        console.log(err);
-        throw new Error('SimpleApps Invoice API Error');
-      });
-  }
+  // async function invoiceValidate() {
+  //   return superagent
+  //     .get(
+  //       `https://api.simpleapps.net/ecommerce/invoices?resource_list=all&customer_id=${payload.accountNumber}`
+  //     )
+  //     .query({
+  //       resource_list: 'all',
+  //       siteid: 'coastalone',
+  //       customer_id: payload.accountNumber,
+  //       limit: 5,
+  //     })
+  //     .set('x-api-key', '020A1B0AD2E19A2C13931F6744BC52C096FF5BB0')
+  //     .then(res => {
+  //       console.log('SimpleApps Invoice Api Working');
+  //       Object.assign(res, JSON.parse(res.text));
+  //       return res.data.map(invoice => invoice.total_amount);
+  //     })
+  //     .catch(err => {
+  //       console.log('SimpleApps Invoice API Error');
+  //       console.log(err);
+  //       throw new Error('SimpleApps Invoice API Error');
+  //     });
+  // }
 
   // async function updateB2BAccount(accountInfo) {
   //   return superagent
@@ -111,6 +115,11 @@ module.exports = function (context) {
       filter: `attributes.value eq ${accountNumber}`,
     });
   }
+  // async function fetchLocation(location) {
+  //   return b2bLocation.getLocation({
+  //     filter: `attributes.value eq ${accountNumber}`,
+  //   });
+  // }
   /**
    * Validate custom attribute before customerValidate
    */
@@ -124,7 +133,8 @@ module.exports = function (context) {
         reject(new Error('Account is already registered'));
       })
     )
-    .then(() => Promise.all([customerValidate(), invoiceValidate()]))
+    // invoiceValidate()
+    .then(() => Promise.all([customerValidate()]))
     .then(res => {
       res.forEach(validationItem => {
         console.log('Validation Item', validationItem);
@@ -138,25 +148,26 @@ module.exports = function (context) {
       if (requiredData.accountId !== payload.accountNumber || requiredData.postalOrZipCode !== payload.billingZip) {
         throw new Error('Account not validated for Customer Account');
       }
-      return new Promise((resolve, reject) => {
-        const validateAmount = requiredData.invoices.findIndex(
-          element => Number(element) === Number(payload.lastInvoice)
-        );
-        console.log(validateAmount);
-        if (validateAmount >= 0) resolve();
-        reject(new Error('Account not validated for invoice amount'));
-      });
+      // return new Promise((resolve, reject) => {
+      //   const validateAmount = requiredData.invoices.findIndex(
+      //     element => Number(element) === Number(payload.lastInvoice)
+      //   );
+      //   console.log(validateAmount);
+      //   if (validateAmount >= 0) resolve();
+      //   reject(new Error('Account not validated for invoice amount'));
+      // });
     })
     .then(() => {
       const {
-        // eslint-disable-next-line max-len
-        accountId, companyOrOrganization, address1, address2, cityOrTown, stateOrProvince, postalOrZipCode, countryCode
+        // eslint-disable-next-line max-len, camelcase
+        accountId, industry, size, kibo_region, companyOrOrganization, address1, address2, cityOrTown, stateOrProvince, postalOrZipCode, countryCode
       } = requiredData;
 
       p21AccountId = accountId;
-      // kiboRegion = kibo_region;
-      // Size = size;
-      // Industry = industry;
+      Industry = industry;
+      Size = size;
+      // eslint-disable-next-line camelcase
+      kiboRegion = kibo_region;
       // const invoiceLength = requiredData.invoiceValidated.data.length - 1;
       // eslint-disable-next-line eqeqeq
       // if (requiredData.invoiceValidated.data[invoiceLength].total_amount == payload.lastInvoice) {
@@ -203,15 +214,6 @@ module.exports = function (context) {
       //   context.response.end();
       //   return;
       // }
-      // const kiboRegion = {
-      //   kibo_region: kibo_region
-      // };
-      // const Size = {
-      //   size: size
-      // };
-      // const Industry = {
-      //   industry: industry
-      // };
       const accountPayload = {
         users: [
           {
@@ -222,9 +224,6 @@ module.exports = function (context) {
             localecode: 'en-US',
           },
         ],
-        // kiboRegion: stateOrProvince,
-        // Size: size,
-        // Industry: industry,
         companyOrOrganization: companyOrOrganization,
         accountType: 'B2B',
         isActive: true,
@@ -262,20 +261,25 @@ module.exports = function (context) {
       return B2bAccountCreate.b2bAccountflow(tempClient, accountPayload,
         {
           p21AccountId,
-          billingAddress,
-          // kibo_region: requiredData.kibo_region,
-          // size: requiredData.size,
-          // industry: requiredData.industry
+          Industry,
+          Size,
+          kiboRegion,
+          billingAddress
         });
       // return makeB2BAccount({ payload: accountPayload, p21AccountId });
       // throw new Error('Account not validated for Invoice Account');
     })
     .then(res => {
-      console.log('after update of attributes', res);
+      console.log('after update of attributes Successfully created Account');
+      console.log('Response getting after account created', res);
       if (res instanceof Error) {
         return Promise.reject(res);
       }
-      return Promise.resolve();
+      return superagent.post('https://3lqwti7btk.execute-api.us-east-2.amazonaws.com/dev/coastal-jobquote-pricelist-api')
+        .send(res)
+        // .set('X-API-Key', 'foobar')
+        .set('Accept', 'application/json');
+      // .then(() => context.response.end());
     })
     .then(() => {
       context.response.body = 'Account Created';
