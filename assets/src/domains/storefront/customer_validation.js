@@ -5,15 +5,10 @@
 const superagent = require('superagent');
 const Client = require('mozu-node-sdk/clients/platform/application');
 const B2bAccountSDK = require('../../../resources/b2bAccount');
-// const LocationSDK = require('../../../resources/location');
 const B2BAccount = require('../../utilities/b2bAccountCreationPipeline');
-// const AccountCreation = require('../../utilities/b2bAccountCreationPipeline');
 
 const B2bAccountCreate = new B2BAccount();
-
 module.exports = function (context) {
-  // eslint-disable-next-line node/no-deprecated-api
-  // const reqURL = url.parse(context.request.href);
   // eslint-disable-next-line prefer-object-spread
   const payload = Object.assign({}, context.request.body);
   console.log('payload received', payload);
@@ -28,8 +23,6 @@ module.exports = function (context) {
 
   client.context['user-claims'] = null;
   const b2bAccount = new B2bAccountSDK(client);
-  // const b2bLocation = new LocationSDK(client);
-  // console.log('b2bLocation', b2bLocation);
   let p21AccountId;
   let Industry;
   let Size;
@@ -51,7 +44,6 @@ module.exports = function (context) {
         console.log('SimpleApps Customer API Working');
         Object.assign(res, JSON.parse(res.text));
         return {
-          // eslint-disable-next-line radix
           accountId: res.data.customer_id,
           industry: res.data.class_1id,
           size: res.data.class_3id,
@@ -71,91 +63,68 @@ module.exports = function (context) {
         throw new Error('SimpleApps Customer API error');
       });
   }
-  // async function invoiceValidate() {
-  //   return superagent
-  //     .get(
-  //       `https://api.simpleapps.net/ecommerce/invoices?resource_list=all&customer_id=${payload.accountNumber}`
-  //     )
-  //     .query({
-  //       resource_list: 'all',
-  //       siteid: 'coastalone',
-  //       customer_id: payload.accountNumber,
-  //       limit: 5,
-  //     })
-  //     .set('x-api-key', '020A1B0AD2E19A2C13931F6744BC52C096FF5BB0')
-  //     .then(res => {
-  //       console.log('SimpleApps Invoice Api Working');
-  //       Object.assign(res, JSON.parse(res.text));
-  //       return res.data.map(invoice => invoice.total_amount);
-  //     })
-  //     .catch(err => {
-  //       console.log('SimpleApps Invoice API Error');
-  //       console.log(err);
-  //       throw new Error('SimpleApps Invoice API Error');
-  //     });
-  // }
+  async function invoiceValidate() {
+    return superagent
+      .get(
+        `https://api.simpleapps.net/ecommerce/invoices?resource_list=all&customer_id=${payload.accountNumber}`
+      )
+      .query({
+        resource_list: 'all',
+        siteid: 'coastalone',
+        customer_id: payload.accountNumber,
+        limit: 5,
+      })
+      .set('x-api-key', '020A1B0AD2E19A2C13931F6744BC52C096FF5BB0')
+      .then(res => {
+        console.log('SimpleApps Invoice Api Working');
+        Object.assign(res, JSON.parse(res.text));
+        return res.data.map(invoice => invoice.total_amount);
+      })
+      .catch(err => {
+        console.log('SimpleApps Invoice API Error');
+        console.log(err);
+        throw new Error('SimpleApps Invoice API Error');
+      });
+  }
 
-  // async function updateB2BAccount(accountInfo) {
-  //   return superagent
-  //     .get(
-  //       `https://${reqURL.hostname}/coastal/api/commerce/customer/b2baccounts`
-  //     )
-  //     .send(accountInfo);
-  //   .then(() => {
-  //     console.log('B2B new Account Custom Function Success');
-  //   })
-  //   .catch(err => {
-  //     console.log('Error Block');
-  //     console.log(err.response.text);
-  //     throw new Error(err.response.text);
-  //   });
-  // }
   async function validateExistingAccount(accountNumber) {
     return b2bAccount.getB2BAccounts({
       filter: `attributes.value eq ${accountNumber}`,
     });
   }
-  // async function fetchLocation(location) {
-  //   return b2bLocation.getLocation({
-  //     filter: `attributes.value eq ${accountNumber}`,
-  //   });
-  // }
+
   /**
    * Validate custom attribute before customerValidate
    */
   validateExistingAccount(payload.accountNumber)
     .then(
       res => new Promise((resolve, reject) => {
-        console.log('Response Code', res);
         if (res.totalCount === 0) {
           resolve('Account does not exist');
         }
         reject(new Error('Account is already registered'));
       })
     )
-    // invoiceValidate()
-    .then(() => Promise.all([customerValidate()]))
+    .then(() => Promise.all([customerValidate(), invoiceValidate()]))
     .then(res => {
       res.forEach(validationItem => {
-        console.log('Validation Item', validationItem);
         if (Array.isArray(validationItem)) {
           requiredData.invoices = validationItem;
         } else {
           Object.assign(requiredData, validationItem);
         }
       });
-      console.log('requreData', requiredData);
       if (requiredData.accountId !== payload.accountNumber || requiredData.postalOrZipCode !== payload.billingZip) {
         throw new Error('Account not validated for Customer Account');
       }
-      // return new Promise((resolve, reject) => {
-      //   const validateAmount = requiredData.invoices.findIndex(
-      //     element => Number(element) === Number(payload.lastInvoice)
-      //   );
-      //   console.log(validateAmount);
-      //   if (validateAmount >= 0) resolve();
-      //   reject(new Error('Account not validated for invoice amount'));
-      // });
+      return new Promise((resolve, reject) => {
+        const validateAmount = requiredData.invoices.findIndex(
+          element => Number(element) === Number(payload.lastInvoice)
+        );
+        console.log(validateAmount);
+        if (validateAmount >= 0) resolve();
+        reject(new Error('Account not validated for invoice amount'));
+      });
     })
     .then(() => {
       const {
@@ -168,52 +137,6 @@ module.exports = function (context) {
       Size = size;
       // eslint-disable-next-line camelcase
       kiboRegion = kibo_region;
-      // const invoiceLength = requiredData.invoiceValidated.data.length - 1;
-      // eslint-disable-next-line eqeqeq
-      // if (requiredData.invoiceValidated.data[invoiceLength].total_amount == payload.lastInvoice) {
-      //   const accountPayload = {
-      //     users: [
-      //       {
-      //         emailAddress: emailAddress,
-      //         firstName: companyOrOrganization,
-      //         lastName: '',
-      //         userName: emailAddress,
-      //         localecode: 'en-US'
-      //       }
-      //     ],
-      //     companyOrOrganization: companyOrOrganization,
-      //     accountType: 'B2B',
-      //     emailAddress: emailAddress,
-      //     isActive: true,
-      //     firstName: companyOrOrganization,
-      //     lastName: '',
-      //     isAnonymous: false,
-      //     agreeToGDPR: true,
-      //     contacts: [{
-      //       type: [{
-      //         name: 'Shipping',
-      //         isPrimary: true,
-      //       }, {
-      //         name: 'Billing',
-      //         isPrimary: false,
-      //       }],
-      //       email: emailAddress,
-      //       firstName: companyOrOrganization,
-      //       address: {
-      //         address1,
-      //         address2,
-      //         cityOrTown,
-      //         stateOrProvince,
-      //         postalOrZipCode,
-      //         countryCode,
-      //       }
-      //     }],
-      //   };
-      //   // AccountCreation(clientContext, accountPayload);
-      //   context.response.body = 'Success';
-      //   context.response.end();
-      //   return;
-      // }
       const accountPayload = {
         users: [
           {
@@ -257,7 +180,6 @@ module.exports = function (context) {
           },
         },
       ];
-      // eslint-disable-next-line prefer-object-spread
       return B2bAccountCreate.b2bAccountflow(tempClient, accountPayload,
         {
           p21AccountId,
@@ -266,20 +188,17 @@ module.exports = function (context) {
           kiboRegion,
           billingAddress
         });
-      // return makeB2BAccount({ payload: accountPayload, p21AccountId });
-      // throw new Error('Account not validated for Invoice Account');
     })
     .then(res => {
       console.log('after update of attributes Successfully created Account');
-      console.log('Response getting after account created', res);
+      console.log('Kibo Response', res);
       if (res instanceof Error) {
         return Promise.reject(res);
       }
-      return superagent.post('https://3lqwti7btk.execute-api.us-east-2.amazonaws.com/dev/coastal-jobquote-pricelist-api')
+      return superagent.post('https://70uae7fha1.execute-api.us-east-2.amazonaws.com/dev')
         .send(res)
-        // .set('X-API-Key', 'foobar')
         .set('Accept', 'application/json');
-      // .then(() => context.response.end());
+      // return Promise.resolve();
     })
     .then(() => {
       context.response.body = 'Account Created';
@@ -287,14 +206,6 @@ module.exports = function (context) {
     })
     .catch(err => {
       console.log(err.message);
-      // let newErr;
-      // if (err.originalError.message) {
-      //   newErr = new Error(err.originalError.message);
-      // } else {
-      //   newErr = err;
-      // }
-      // // console.log(newErr);
-      // console.log(newErr.message);
       context.response.status = 400;
       context.response.body = err.message;
       context.response.end();
