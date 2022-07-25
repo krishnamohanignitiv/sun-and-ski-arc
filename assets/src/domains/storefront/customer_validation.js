@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 // const request = require('requests');
 // const fetch1 = require('node-fetch');
 // const url = require('url');
@@ -5,16 +6,12 @@ const superagent = require('superagent');
 const Client = require('mozu-node-sdk/clients/platform/application');
 const B2bAccountSDK = require('../../../resources/b2bAccount');
 const B2BAccount = require('../../utilities/b2bAccountCreationPipeline');
-// const AccountCreation = require('../../utilities/b2bAccountCreationPipeline');
 
 const B2bAccountCreate = new B2BAccount();
-
 module.exports = function (context) {
-  // eslint-disable-next-line node/no-deprecated-api
-  // const reqURL = url.parse(context.request.href);
   // eslint-disable-next-line prefer-object-spread
   const payload = Object.assign({}, context.request.body);
-  // console.log(payload);
+  console.log('payload received', payload);
   const client = new Client({
     context: {
       appKey: 'CosCon.coastal_registration.1.0.0.Release',
@@ -26,10 +23,13 @@ module.exports = function (context) {
 
   client.context['user-claims'] = null;
   const b2bAccount = new B2bAccountSDK(client);
-
   let p21AccountId;
+  let Industry;
+  let Size;
+  let kiboRegion;
 
   const requiredData = {};
+  console.log('requiredData', requiredData);
   /**
    * All async functions
    */
@@ -45,6 +45,9 @@ module.exports = function (context) {
         Object.assign(res, JSON.parse(res.text));
         return {
           accountId: res.data.customer_id,
+          industry: res.data.class_1id,
+          size: res.data.class_3id,
+          kibo_region: res.data.resources.customersControl[0].source_location_id,
           companyOrOrganization: res.data.customer_name,
           address1: res.data.resources.customersBilltos[0].phys_address1,
           address2: res.data.resources.customersBilltos[0].phys_address2,
@@ -84,26 +87,12 @@ module.exports = function (context) {
       });
   }
 
-  // async function makeB2BAccount(accountInfo) {
-  //   return superagent
-  //     .post(
-  //       `https://${reqURL.hostname}/coastal/api/commerce/customer/b2baccounts`
-  //     )
-  //     .send(accountInfo);
-  //   // .then(() => {
-  //   //   console.log('B2B new Account Custom Function Success');
-  //   // })
-  //   // .catch(err => {
-  //   //   console.log('Error Block');
-  //   //   console.log(err.response.text);
-  //   //   throw new Error(err.response.text);
-  //   // });
-  // }
   async function validateExistingAccount(accountNumber) {
     return b2bAccount.getB2BAccounts({
       filter: `attributes.value eq ${accountNumber}`,
     });
   }
+
   /**
    * Validate custom attribute before customerValidate
    */
@@ -125,7 +114,6 @@ module.exports = function (context) {
           Object.assign(requiredData, validationItem);
         }
       });
-
       if (requiredData.accountId !== payload.accountNumber || requiredData.postalOrZipCode !== payload.billingZip) {
         throw new Error('Account not validated for Customer Account');
       }
@@ -140,56 +128,15 @@ module.exports = function (context) {
     })
     .then(() => {
       const {
-        accountId, companyOrOrganization, address1, address2, cityOrTown, stateOrProvince, postalOrZipCode, countryCode
+        // eslint-disable-next-line max-len, camelcase
+        accountId, industry, size, kibo_region, companyOrOrganization, address1, address2, cityOrTown, stateOrProvince, postalOrZipCode, countryCode
       } = requiredData;
 
       p21AccountId = accountId;
-      // const invoiceLength = requiredData.invoiceValidated.data.length - 1;
-      // eslint-disable-next-line eqeqeq
-      // if (requiredData.invoiceValidated.data[invoiceLength].total_amount == payload.lastInvoice) {
-      //   const accountPayload = {
-      //     users: [
-      //       {
-      //         emailAddress: emailAddress,
-      //         firstName: companyOrOrganization,
-      //         lastName: '',
-      //         userName: emailAddress,
-      //         localecode: 'en-US'
-      //       }
-      //     ],
-      //     companyOrOrganization: companyOrOrganization,
-      //     accountType: 'B2B',
-      //     emailAddress: emailAddress,
-      //     isActive: true,
-      //     firstName: companyOrOrganization,
-      //     lastName: '',
-      //     isAnonymous: false,
-      //     agreeToGDPR: true,
-      //     contacts: [{
-      //       type: [{
-      //         name: 'Shipping',
-      //         isPrimary: true,
-      //       }, {
-      //         name: 'Billing',
-      //         isPrimary: false,
-      //       }],
-      //       email: emailAddress,
-      //       firstName: companyOrOrganization,
-      //       address: {
-      //         address1,
-      //         address2,
-      //         cityOrTown,
-      //         stateOrProvince,
-      //         postalOrZipCode,
-      //         countryCode,
-      //       }
-      //     }],
-      //   };
-      //   // AccountCreation(clientContext, accountPayload);
-      //   context.response.body = 'Success';
-      //   context.response.end();
-      //   return;
-      // }
+      Industry = industry;
+      Size = size;
+      // eslint-disable-next-line camelcase
+      kiboRegion = kibo_region;
       const accountPayload = {
         users: [
           {
@@ -233,18 +180,25 @@ module.exports = function (context) {
           },
         },
       ];
-      // eslint-disable-next-line prefer-object-spread
       return B2bAccountCreate.b2bAccountflow(tempClient, accountPayload,
-        { p21AccountId, billingAddress });
-      // return makeB2BAccount({ payload: accountPayload, p21AccountId });
-      // throw new Error('Account not validated for Invoice Account');
+        {
+          p21AccountId,
+          Industry,
+          Size,
+          kiboRegion,
+          billingAddress
+        });
     })
     .then(res => {
-      console.log(res);
+      console.log('after update of attributes Successfully created Account');
+      console.log('Kibo Response', res);
       if (res instanceof Error) {
         return Promise.reject(res);
       }
-      return Promise.resolve();
+      return superagent.post('https://70uae7fha1.execute-api.us-east-2.amazonaws.com/dev')
+        .send(res)
+        .set('Accept', 'application/json');
+      // return Promise.resolve();
     })
     .then(() => {
       context.response.body = 'Account Created';
@@ -252,14 +206,6 @@ module.exports = function (context) {
     })
     .catch(err => {
       console.log(err.message);
-      // let newErr;
-      // if (err.originalError.message) {
-      //   newErr = new Error(err.originalError.message);
-      // } else {
-      //   newErr = err;
-      // }
-      // // console.log(newErr);
-      // console.log(newErr.message);
       context.response.status = 400;
       context.response.body = err.message;
       context.response.end();

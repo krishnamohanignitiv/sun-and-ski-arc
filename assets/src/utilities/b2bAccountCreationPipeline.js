@@ -1,19 +1,53 @@
+// const superagent = require('superagent');
 const B2bAccountSDK = require('../../resources/b2bAccount');
 // const Client = require('mozu-node-sdk/clients/platform/application');
+let kiboAccountId;
 
 class B2BAccount {
   b2bAccountflow(context, payload, additionalInfo = {}) {
-    console.log(payload);
     const b2bAccount = new B2bAccountSDK(context);
     b2bAccount.context['user-claims'] = null;
+    // const kiboSize = additionalInfo.Size.replace(/-/g, '').substring(0, 2);
+    const emailId = additionalInfo.billingAddress[0].email;
     let p21AccountId = null;
+    let kiboRegion = null;
+    let Size = null;
+    let Industry = null;
     if (additionalInfo.p21AccountId) {
       p21AccountId = additionalInfo.p21AccountId;
     }
-
+    if (additionalInfo.kiboRegion === '10') {
+      kiboRegion = 'FL';
+    } else if (additionalInfo.kiboRegion === '20') {
+      kiboRegion = 'SF';
+    } else if (additionalInfo.kiboRegion === '100') {
+      kiboRegion = 'AT';
+    } else if (additionalInfo.kiboRegion === '120') {
+      kiboRegion = 'CA';
+    } else if (additionalInfo.kiboRegion === '130') {
+      kiboRegion = 'LI';
+    } else if (additionalInfo.kiboRegion === '140') {
+      kiboRegion = 'TE';
+    } else if (additionalInfo.kiboRegion === '200') {
+      kiboRegion = 'CH';
+    }
+    if (additionalInfo.Size === 'V-SMALL') {
+      Size = 'VS';
+    } else if (additionalInfo.Size === 'SMALL') {
+      Size = 'SM';
+    } else if (additionalInfo.Size === 'MEDIUM') {
+      Size = 'ME';
+    } else if (additionalInfo.Size === 'LARGE') {
+      Size = 'LG';
+    } else if (additionalInfo.Size === 'HUGE') {
+      Size = 'HG';
+    }
+    if (additionalInfo.Industry) {
+      Industry = additionalInfo.Industry;
+    }
     return b2bAccount.addAccount({}, { body: payload })
       .then(res => {
-        console.log(res);
+        kiboAccountId = res.id.toString();
         const { id: accountId } = res;
 
         return b2bAccount.addSalesRep({
@@ -23,7 +57,7 @@ class B2BAccount {
       })
       .then(res => {
         const { id: accountId } = res;
-        return b2bAccount.accountApprove({ accountId, status: 'approve' });
+        return b2bAccount.accountApprove({ accountId, status: 'deny' });
       })
       .then(res => {
         if (p21AccountId) {
@@ -38,6 +72,33 @@ class B2BAccount {
               },
             }
           ));
+          promises.push(b2bAccount.addB2BAccountAttribute(
+            { accountId: res.id, attributeFQN: 'tenant~account_id' },
+            {
+              body: {
+                fullyQualifiedName: 'tenant~kibo-region',
+                values: [kiboRegion],
+              },
+            }
+          ));
+          promises.push(b2bAccount.addB2BAccountAttribute(
+            { accountId: res.id, attributeFQN: 'tenant~account_id' },
+            {
+              body: {
+                fullyQualifiedName: 'tenant~kibo_size',
+                values: [Size],
+              },
+            }
+          ));
+          promises.push(b2bAccount.addB2BAccountAttribute(
+            { accountId: res.id, attributeFQN: 'tenant~account_id' },
+            {
+              body: {
+                fullyQualifiedName: 'tenant~industry',
+                values: [Industry],
+              },
+            }
+          ));
           promises.push(b2bAccount.addContact(
             { accountId: res.id },
             {
@@ -48,7 +109,17 @@ class B2BAccount {
         }
         return Promise.resolve('Creating New User');
       })
-      .then(() => 'Successfully created Account')
+      .then(() => (
+        {
+          p21CustomerId: p21AccountId,
+          kiboRegion: kiboRegion,
+          industry: Industry,
+          size: Size,
+          kiboCustomerId: kiboAccountId,
+          kiboCustomerEmailId: emailId,
+          enable_flag: 'true'
+        }
+      ))
       .catch(err => {
         console.log(err.originalError.message);
         return new Error(err.originalError.message);
