@@ -164,7 +164,7 @@ module.exports = function (context, callback) {
       }));
 
       const payload = {
-        entityListFQN: 'quotelist@coastal',
+        entityListFQN: 'quotelist@coscon',
         quoteId: quoteExtendedProperty.value,
         productToUpdate
       };
