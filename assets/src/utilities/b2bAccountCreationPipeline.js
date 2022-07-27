@@ -30,7 +30,8 @@ class B2BAccount {
       kiboRegion = 'TE';
     } else if (additionalInfo.kiboRegion === '200') {
       kiboRegion = 'CH';
-    }
+    } else { kiboRegion = ''; }
+
     if (additionalInfo.Size === 'V-SMALL') {
       Size = 'VS';
     } else if (additionalInfo.Size === 'SMALL') {
@@ -41,7 +42,8 @@ class B2BAccount {
       Size = 'LG';
     } else if (additionalInfo.Size === 'HUGE') {
       Size = 'HG';
-    }
+    } else { Size = ''; }
+
     if (additionalInfo.Industry) {
       Industry = additionalInfo.Industry;
     }
