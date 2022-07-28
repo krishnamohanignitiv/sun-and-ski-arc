@@ -10,7 +10,9 @@ const entityList = new EntityListController();
 const yotpoOrder = new YotpoController();
 
 module.exports = function (context, callback) {
+  const FQNName = context.configuration.entityListFQNName;
   const order = context.get.order();
+  console.log('Context Configuration', context.configuration.entityListFQNName);
   async function klaviyoServerSide(klaviyoPayload) {
     return superagent
       .post(
@@ -164,7 +166,7 @@ module.exports = function (context, callback) {
       }));
 
       const payload = {
-        entityListFQN: 'quotelist@coscon',
+        entityListFQN: FQNName,
         quoteId: quoteExtendedProperty.value,
         productToUpdate
       };
