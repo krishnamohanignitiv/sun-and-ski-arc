@@ -59,7 +59,7 @@ class B2BAccount {
       })
       .then(res => {
         const { id: accountId } = res;
-        return b2bAccount.accountApprove({ accountId, status: 'deny' });
+        return b2bAccount.accountApprove({ accountId, status: 'approve' });
       })
       .then(res => {
         if (p21AccountId) {
