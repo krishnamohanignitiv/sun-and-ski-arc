@@ -29,7 +29,6 @@ module.exports = function (context) {
   let kiboRegion;
 
   const requiredData = {};
-  console.log('requiredData', requiredData);
   /**
    * All async functions
    */
