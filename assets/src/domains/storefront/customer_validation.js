@@ -14,8 +14,8 @@ module.exports = function (context) {
   console.log('payload received', payload);
   const client = new Client({
     context: {
-      appKey: 'CosCon.coastal_registration.1.0.0.Release',
-      sharedSecret: '00c410dac56d49c7bc13ffc5d470ca44',
+      appKey: 'CosCon.coastal_registration_QA.1.0.0.Release',
+      sharedSecret: '56159cf5e5d94df6a0060ec42238af85',
     },
   });
 
