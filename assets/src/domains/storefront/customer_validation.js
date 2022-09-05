@@ -27,64 +27,14 @@ module.exports = function (context) {
   let Industry;
   let Size;
   let kiboRegion;
-
+  let contactId;
+  let termsId;
+  let shipToId;
+  console.log(contactId, termsId, shipToId);
   const requiredData = {};
   /**
    * All async functions
    */
-  async function customerValidate() {
-    return superagent
-      .get(
-        `https://api.simpleapps.net/ecommerce/customers/${payload.accountNumber}`
-      )
-      .query({ resource_list: 'all', siteid: 'coastalone' })
-      .set('x-api-key', '020A1B0AD2E19A2C13931F6744BC52C096FF5BB0')
-      .then(res => {
-        console.log('SimpleApps Customer API Working');
-        Object.assign(res, JSON.parse(res.text));
-        return {
-          accountId: res.data.customer_id,
-          industry: res.data.class_1id,
-          size: res.data.class_3id,
-          kibo_region: res.data.resources.customersControl[0].source_location_id,
-          companyOrOrganization: res.data.customer_name,
-          address1: res.data.resources.customersBilltos[0].phys_address1,
-          address2: res.data.resources.customersBilltos[0].phys_address2,
-          cityOrTown: res.data.resources.customersBilltos[0].phys_city,
-          stateOrProvince: res.data.resources.customersBilltos[0].phys_state,
-          postalOrZipCode: res.data.resources.customersBilltos[0].phys_postal_code,
-          countryCode: res.data.resources.customersBilltos[0].phys_country
-        };
-      })
-      .catch(err => {
-        console.log('SimpleApps Customer API error');
-        console.log(err);
-        throw new Error('SimpleApps Customer API error');
-      });
-  }
-  async function invoiceValidate() {
-    return superagent
-      .get(
-        `https://api.simpleapps.net/ecommerce/invoices?resource_list=all&customer_id=${payload.accountNumber}`
-      )
-      .query({
-        resource_list: 'all',
-        siteid: 'coastalone',
-        customer_id: payload.accountNumber,
-        limit: 5,
-      })
-      .set('x-api-key', '020A1B0AD2E19A2C13931F6744BC52C096FF5BB0')
-      .then(res => {
-        console.log('SimpleApps Invoice Api Working');
-        Object.assign(res, JSON.parse(res.text));
-        return res.data.map(invoice => invoice.total_amount);
-      })
-      .catch(err => {
-        console.log('SimpleApps Invoice API Error');
-        console.log(err);
-        throw new Error('SimpleApps Invoice API Error');
-      });
-  }
 
   async function validateExistingAccount(accountNumber) {
     return b2bAccount.getB2BAccounts({
@@ -104,27 +54,39 @@ module.exports = function (context) {
         reject(new Error('Account is already registered'));
       })
     )
-    .then(() => Promise.all([customerValidate(), invoiceValidate()]))
+    .then(() => superagent.post('https://0k2s3v9lbl.execute-api.us-east-2.amazonaws.com/dev/customer-validation')
+      .send(JSON.stringify(payload))).set('Accept', 'application/json')
     .then(res => {
-      res.forEach(validationItem => {
-        if (Array.isArray(validationItem)) {
-          requiredData.invoices = validationItem;
-        } else {
-          Object.assign(requiredData, validationItem);
-        }
-      });
-      if (requiredData.accountId !== payload.accountNumber || requiredData.postalOrZipCode !== payload.billingZip) {
-        throw new Error('Account not validated for Customer Account');
+      const response = JSON.parse(res.text);
+      console.log(response);
+      if (response.invoice.invoiceValidated && response.customer.customerValidated) {
+        contactId = response.customer.customer.contact.contactID;
+        shipToId = response.customer.shipToId;
+        termsId = response.customer.termsId;
+      } else {
+        // code for not validated
       }
-      return new Promise((resolve, reject) => {
-        const validateAmount = requiredData.invoices.findIndex(
-          element => Number(element) === Number(payload.lastInvoice)
-        );
-        console.log(validateAmount);
-        if (validateAmount >= 0) resolve();
-        reject(new Error('Account not validated for invoice amount'));
-      });
     })
+    // .then(res => {
+    //   res.forEach(validationItem => {
+    //     if (Array.isArray(validationItem)) {
+    //       requiredData.invoices = validationItem;
+    //     } else {
+    //       Object.assign(requiredData, validationItem);
+    //     }
+    //   });
+    //   if (requiredData.accountId !== payload.accountNumber || requiredData.postalOrZipCode !== payload.billingZip) {
+    //     throw new Error('Account not validated for Customer Account');
+    //   }
+    //   return new Promise((resolve, reject) => {
+    //     const validateAmount = requiredData.invoices.findIndex(
+    //       element => Number(element) === Number(payload.lastInvoice)
+    //     );
+    //     console.log(validateAmount);
+    //     if (validateAmount >= 0) resolve();
+    //     reject(new Error('Account not validated for invoice amount'));
+    //   });
+    // })
     .then(() => {
       const {
         // eslint-disable-next-line max-len, camelcase
