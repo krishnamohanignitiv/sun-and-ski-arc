@@ -51,6 +51,7 @@ class B2BAccount {
       }
       return b2bAccount.addAccount({}, { body: payload })
         .then(res => {
+          console.log('add account response 1', res.id);
           kiboAccountId = res.id.toString();
           const { id: accountId } = res;
 
@@ -60,8 +61,9 @@ class B2BAccount {
           });
         })
         .then(res => {
+          console.log('add account response 2', res.id);
           const { id: accountId } = res;
-          return b2bAccount.accountApprove({ accountId, status: 'deny' });
+          return b2bAccount.accountApprove({ accountId, status: 'approve' });
         })
         .then(res => {
           if (p21AccountId) {

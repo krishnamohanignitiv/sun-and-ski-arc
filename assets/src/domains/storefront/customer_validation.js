@@ -31,7 +31,6 @@ module.exports = function (context) {
   let termsId;
   let shipToId;
   console.log(contactId, termsId, shipToId);
-  const requiredData = {};
   /**
    * All async functions
    */
@@ -41,6 +40,9 @@ module.exports = function (context) {
       filter: `attributes.value eq ${accountNumber}`,
     });
   }
+
+  // const validateAccount = () => superagent.post('https://0k2s3v9lbl.execute-api.us-east-2.amazonaws.com/dev/customer-validation')
+  //   .send(JSON.stringify(payload)).set('Accept', 'application/json');
 
   /**
    * Validate custom attribute before customerValidate
@@ -55,100 +57,82 @@ module.exports = function (context) {
       })
     )
     .then(() => superagent.post('https://0k2s3v9lbl.execute-api.us-east-2.amazonaws.com/dev/customer-validation')
-      .send(JSON.stringify(payload))).set('Accept', 'application/json')
+      .send(JSON.stringify(payload)).set('Accept', 'application/json'))
     .then(res => {
       const response = JSON.parse(res.text);
       console.log(response);
       if (response.invoice.invoiceValidated && response.customer.customerValidated) {
-        contactId = response.customer.customer.contact.contactID;
+        contactId = response.customer.contact.contactID;
         shipToId = response.customer.shipToId;
         termsId = response.customer.termsId;
-      } else {
-        // code for not validated
-      }
-    })
-    // .then(res => {
-    //   res.forEach(validationItem => {
-    //     if (Array.isArray(validationItem)) {
-    //       requiredData.invoices = validationItem;
-    //     } else {
-    //       Object.assign(requiredData, validationItem);
-    //     }
-    //   });
-    //   if (requiredData.accountId !== payload.accountNumber || requiredData.postalOrZipCode !== payload.billingZip) {
-    //     throw new Error('Account not validated for Customer Account');
-    //   }
-    //   return new Promise((resolve, reject) => {
-    //     const validateAmount = requiredData.invoices.findIndex(
-    //       element => Number(element) === Number(payload.lastInvoice)
-    //     );
-    //     console.log(validateAmount);
-    //     if (validateAmount >= 0) resolve();
-    //     reject(new Error('Account not validated for invoice amount'));
-    //   });
-    // })
-    .then(() => {
-      const {
-        // eslint-disable-next-line max-len, camelcase
-        accountId, industry, size, kibo_region, companyOrOrganization, address1, address2, cityOrTown, stateOrProvince, postalOrZipCode, countryCode
-      } = requiredData;
-
-      p21AccountId = accountId;
-      Industry = industry;
-      Size = size;
-      // eslint-disable-next-line camelcase
-      kiboRegion = kibo_region;
-      const accountPayload = {
-        users: [
-          {
-            emailAddress: payload.email,
-            firstName: payload.firstName,
-            lastName: payload.lastName,
-            userName: payload.email,
-            localecode: 'en-US',
-          },
-        ],
-        companyOrOrganization: companyOrOrganization,
-        accountType: 'B2B',
-        isActive: true,
-        isAnonymous: false,
-        agreeToGDPR: true,
-      };
-      const billingAddress = [
-        {
-          types: [
+        const {
+          // eslint-disable-next-line camelcase
+          accountId, industry, size, kibo_region, companyOrOrganization, address1, address2, cityOrTown, stateOrProvince, postalOrZipCode, countryCode
+        } = response.customer;
+        console.log('Data validated');
+        console.log(accountId, industry, size, kibo_region, companyOrOrganization, address1, address2, cityOrTown, stateOrProvince, postalOrZipCode, countryCode, contactId, shipToId, termsId);
+        p21AccountId = accountId;
+        Industry = industry;
+        Size = size;
+        // eslint-disable-next-line camelcase
+        kiboRegion = kibo_region;
+        const accountPayload = {
+          users: [
             {
-              name: 'Shipping',
-              isPrimary: false,
-            },
-            {
-              name: 'Billing',
-              isPrimary: true,
+              emailAddress: payload.email,
+              firstName: payload.firstName,
+              lastName: payload.lastName,
+              userName: payload.email,
+              localecode: 'en-US',
             },
           ],
-          email: payload.email,
-          firstName: payload.firstName,
-          lastNameOrSurname: payload.lastName,
           companyOrOrganization: companyOrOrganization,
-          address: {
-            address1,
-            address2,
-            cityOrTown,
-            stateOrProvince,
-            postalOrZipCode,
-            countryCode,
-            isValidated: true
+          accountType: 'B2B',
+          isActive: true,
+          isAnonymous: false,
+          agreeToGDPR: true,
+        };
+        const billingAddress = [
+          {
+            types: [
+              {
+                name: 'Shipping',
+                isPrimary: false,
+              },
+              {
+                name: 'Billing',
+                isPrimary: true,
+              },
+            ],
+            email: payload.email,
+            firstName: payload.firstName,
+            lastNameOrSurname: payload.lastName,
+            companyOrOrganization: companyOrOrganization,
+            address: {
+              address1,
+              address2,
+              cityOrTown,
+              stateOrProvince,
+              postalOrZipCode,
+              countryCode,
+              isValidated: true
+            },
           },
-        },
-      ];
-      return B2bAccountCreate.b2bAccountflow(tempClient, accountPayload,
-        {
-          p21AccountId,
-          Industry,
-          Size,
-          kiboRegion,
-          billingAddress
-        });
+        ];
+        return B2bAccountCreate.b2bAccountflow(tempClient, accountPayload,
+          {
+            p21AccountId,
+            Industry,
+            Size,
+            kiboRegion,
+            billingAddress,
+            contactId,
+            shipToId,
+            termsId
+          });
+      }
+      // code for not validated data
+      return null;
     })
     .then(res => {
       console.log('after update of attributes Successfully created Account');
