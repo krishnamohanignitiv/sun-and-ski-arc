@@ -16,7 +16,7 @@ class B2BAccount {
       let Size = null;
       let Industry = null;
       if (additionalInfo.p21AccountId) {
-        p21AccountId = additionalInfo.p21AccountId;
+        p21AccountId = additionalInfo.p21AccountId.toString();
       }
       if (additionalInfo.kiboRegion === '10') {
         kiboRegion = 'FL';
