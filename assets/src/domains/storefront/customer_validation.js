@@ -75,7 +75,7 @@ module.exports = function (context) {
         Industry = industry;
         Size = size;
         // eslint-disable-next-line camelcase
-        kiboRegion = kibo_region;
+        kiboRegion = kibo_region.toString();
         const accountPayload = {
           users: [
             {
