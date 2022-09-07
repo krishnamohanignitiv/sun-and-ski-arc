@@ -27,10 +27,6 @@ module.exports = (context, callback) => {
   if (order.status === 'Accepted') {
     let customerAccountId;
     try {
-      const { userId } = context.apiContext;
-      const { accountId } = context.apiContext;
-      console.log('userId', userId);
-      console.log('accountId', accountId);
       for (let i = 0; i < Object.keys(order).length; i++) {
         if (Object.keys(order)[i] === 'customerAccountId') {
           customerAccountId = order.customerAccountId;
