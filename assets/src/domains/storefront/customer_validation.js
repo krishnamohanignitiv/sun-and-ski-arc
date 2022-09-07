@@ -61,7 +61,7 @@ module.exports = function (context) {
     .then(res => {
       const response = JSON.parse(res.text);
       console.log(response);
-      if (response.invoice.invoiceValidated && response.customer.customerValidated) {
+      if (response.customer.customerValidated && response.invoice.invoiceValidated) {
         contactId = response.customer.contact.contactID;
         shipToId = response.customer.shipToId;
         termsId = response.customer.termsId;
@@ -132,6 +132,12 @@ module.exports = function (context) {
           });
       }
       // code for not validated data
+      if (!response.customer.customerValidated) {
+        throw new Error('Account not validated for Customer Account');
+      }
+      if (!response.invoice.invoiceValidated) {
+        throw new Error('Account not validated for invoice amount');
+      }
       return null;
     })
     .then(res => {
