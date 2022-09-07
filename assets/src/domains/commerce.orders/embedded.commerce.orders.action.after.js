@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 const superagent = require('superagent');
 const Client = require('mozu-node-sdk/clients/platform/application');
+const B2BAccountSDK = require('mozu-node-sdk/clients/commerce/customer/b2BAccount');
 const PriceListController = require('../../pricelist/PriceListController');
 const EntityListController = require('../../EntityList/EntityListController');
 const YotpoController = require('../../Yotpo/YotpoController');
@@ -9,7 +10,9 @@ const priceList = new PriceListController();
 const entityList = new EntityListController();
 const yotpoOrder = new YotpoController();
 
-module.exports = function (context, callback) {
+module.exports = (context, callback) => {
+  const b2bAccountSdk = new B2BAccountSDK(context);
+  b2bAccountSdk.context['user-claims'] = null;
   const FQNName = context.configuration.entityListFQNName;
   const order = context.get.order();
   console.log('Context Configuration', context.configuration.entityListFQNName);
@@ -22,6 +25,51 @@ module.exports = function (context, callback) {
       .send(klaviyoPayload);
   }
   if (order.status === 'Accepted') {
+    let customerAccountId;
+    try {
+      for (let i = 0; i < Object.keys(order).length; i++) {
+        if (Object.keys(order)[i] === 'customerAccountId') {
+          customerAccountId = order.customerAccountId;
+        }
+      }
+      b2bAccountSdk.getB2BAccountAttributes({
+        accountId: customerAccountId,
+      }).then(res => {
+        console.log(res);
+        if (res.totalCount > 0) {
+          const p21AttributeArray = res.items.filter(item => item.attributeFQN === 'tenant~accountId');
+          if (p21AttributeArray.length > 0) {
+            console.log('p21 Id attribute found');
+            const p21Attribute = p21AttributeArray[0];
+            if (p21Attribute.values.length > 0) {
+              console.log('p21 Id found; adding p21 isP21Customer as true');
+              order.items.forEach(item => {
+                context.exec.setItemData('isP21Customer', true, item.id);
+              });
+            } else {
+              console.log('p21 Id not found; adding p21 isP21Customer as false');
+              order.items.forEach(item => {
+                context.exec.setItemData('isP21Customer', false, item.id);
+              });
+            }
+          } else {
+            console.log('p21 attribute not found; adding p21 isP21Customer as false');
+            order.items.forEach(item => {
+              context.exec.setItemData('isP21Customer', false, item.id);
+            });
+          }
+        } else {
+          console.log('no attributes found; adding p21 isP21Customer as false');
+          order.items.forEach(item => {
+            context.exec.setItemData('isP21Customer', false, item.id);
+          });
+        }
+      });
+    } catch (e) {
+      console.log(e);
+      callback();
+    }
+
     const quoteExtendedProperty = order.extendedProperties.find(data => data.key === 'quoteId');
 
     console.log(quoteExtendedProperty);

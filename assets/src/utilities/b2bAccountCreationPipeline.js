@@ -15,8 +15,20 @@ class B2BAccount {
       let kiboRegion = null;
       let Size = null;
       let Industry = null;
+      let contactId = null;
+      let shipToId = null;
+      let termsId = null;
       if (additionalInfo.p21AccountId) {
-        p21AccountId = additionalInfo.p21AccountId;
+        p21AccountId = additionalInfo.p21AccountId.toString();
+      }
+      if (additionalInfo.contactId) {
+        contactId = additionalInfo.contactId;
+      }
+      if (additionalInfo.shipToId) {
+        shipToId = additionalInfo.shipToId.toString();
+      }
+      if (additionalInfo.termsId) {
+        termsId = additionalInfo.termsId;
       }
       if (additionalInfo.kiboRegion === '10') {
         kiboRegion = 'FL';
@@ -51,6 +63,7 @@ class B2BAccount {
       }
       return b2bAccount.addAccount({}, { body: payload })
         .then(res => {
+          console.log('add account response 1', res.id);
           kiboAccountId = res.id.toString();
           const { id: accountId } = res;
 
@@ -60,6 +73,7 @@ class B2BAccount {
           });
         })
         .then(res => {
+          console.log('add account response 2', res.id);
           const { id: accountId } = res;
           return b2bAccount.accountApprove({ accountId, status: 'deny' });
         })
@@ -101,6 +115,33 @@ class B2BAccount {
                   fullyQualifiedName: 'tenant~industry',
                   values: [Industry],
                 },
+              }
+            ));
+            promises.push(b2bAccount.addB2BAccountAttribute(
+              { accountId: res.id, attributeFQN: 'tenant~account_id' },
+              {
+                body: {
+                  fullyQualifiedName: 'tenant~contact_id',
+                  values: [contactId]
+                }
+              }
+            ));
+            promises.push(b2bAccount.addB2BAccountAttribute(
+              { accountId: res.id, attributeFQN: 'tenant~account_id' },
+              {
+                body: {
+                  fullyQualifiedName: 'tenant~ship_to_id',
+                  values: [shipToId]
+                }
+              }
+            ));
+            promises.push(b2bAccount.addB2BAccountAttribute(
+              { accountId: res.id, attributeFQN: 'tenant~account_id' },
+              {
+                body: {
+                  fullyQualifiedName: 'tenant~terms_id',
+                  values: [termsId]
+                }
               }
             ));
             promises.push(b2bAccount.addContact(
