@@ -67,10 +67,10 @@ module.exports = function (context) {
         termsId = response.customer.termsId;
         const {
           // eslint-disable-next-line camelcase
-          accountId, industry, size, kibo_region, companyOrOrganization, address1, address2, cityOrTown, stateOrProvince, postalOrZipCode, countryCode
+          accountId, industry, size, kibo_region, companyOrOrganization, address1, address2, cityOrTown, stateOrProvince, postalOrZipCode, countryCode, preferredLocationCode
         } = response.customer;
         console.log('Data validated');
-        console.log(accountId, industry, size, kibo_region, companyOrOrganization, address1, address2, cityOrTown, stateOrProvince, postalOrZipCode, countryCode, contactId, shipToId, termsId);
+        console.log(accountId, industry, size, kibo_region, companyOrOrganization, address1, address2, cityOrTown, stateOrProvince, postalOrZipCode, countryCode, contactId, shipToId, termsId, preferredLocationCode);
         p21AccountId = accountId;
         Industry = industry;
         Size = size;
@@ -128,7 +128,8 @@ module.exports = function (context) {
             billingAddress,
             contactId,
             shipToId,
-            termsId
+            termsId,
+            preferredLocationCode
           });
       }
       // code for not validated data

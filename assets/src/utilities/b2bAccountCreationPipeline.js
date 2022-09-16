@@ -18,6 +18,7 @@ class B2BAccount {
       let contactId = null;
       let shipToId = null;
       let termsId = null;
+      let preferredLocationCode = null;
       if (additionalInfo.p21AccountId) {
         p21AccountId = additionalInfo.p21AccountId.toString();
       }
@@ -28,7 +29,10 @@ class B2BAccount {
         shipToId = additionalInfo.shipToId.toString();
       }
       if (additionalInfo.termsId) {
-        termsId = additionalInfo.termsId;
+        termsId = additionalInfo.termsId.toString();
+      }
+      if (additionalInfo.preferredLocationCode) {
+        preferredLocationCode = additionalInfo.preferredLocationCode.toString();
       }
       if (additionalInfo.kiboRegion === '10') {
         kiboRegion = 'FL';
@@ -141,6 +145,15 @@ class B2BAccount {
                 body: {
                   fullyQualifiedName: 'tenant~terms_id',
                   values: [termsId]
+                }
+              }
+            ));
+            promises.push(b2bAccount.addB2BAccountAttribute(
+              { accountId: res.id, attributeFQN: 'tenant~account_id' },
+              {
+                body: {
+                  fullyQualifiedName: 'tenant~assigned_store',
+                  values: [preferredLocationCode]
                 }
               }
             ));
