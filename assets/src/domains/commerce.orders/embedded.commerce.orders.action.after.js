@@ -61,7 +61,7 @@ module.exports = (context, callback) => {
               if (assignedStore && assignedStore.values.length > 0) {
                 console.log('p21Id and assignedStore found; adding p21 isP21Customer as ', assignedStore.values[0]);
                 order.items.forEach(item => {
-                  context.exec.setItemData('assignedStore', parseInt(assignedStore.values[0], 10), item.id);
+                  context.exec.setItemData('assignedStore', assignedStore.values[0], item.id);
                 });
               } else {
                 console.log('p21Id found and assignedStore not found; adding p21 isP21Customer as 0');
