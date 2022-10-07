@@ -14,13 +14,15 @@ module.exports = (context, callback) => {
     orderAttrSdk.updateOrderAttributes({
       orderId: orderId,
       removeMissing: true
-    }, [{
-      fullyQualifiedName: 'tenant~po_number',
-      values: [poNumber]
     }, {
-      fullyQualifiedName: 'tenant~job_name',
-      values: [jobName]
-    }]).then(() => {
+      body: [{
+        fullyQualifiedName: 'tenant~po_number',
+        values: [poNumber]
+      }, {
+        fullyQualifiedName: 'tenant~job_name',
+        values: [jobName]
+      }]
+    }).then(() => {
       context.response.body = 'Attributes added';
       callback();
     }).catch(e => {
