@@ -23,9 +23,15 @@ module.exports = (context, callback) => {
   const getSurcharge = options => options.filter(o => o.attributeFQN === SURCHARGEFQN)[0];
 
   const calculateNewPrice = product => {
+    console.log('calculation of new Price');
     const { options, price } = product;
+    console.log('Product Options', options);
+    console.log('Product Price', price);
     const { shopperEnteredValue } = getSurcharge(options);
+    console.log('Surcharge Value Received', shopperEnteredValue);
     const surchargeValue = parseFloat(shopperEnteredValue);
+    console.log('New Price of Product', price.salePrice ? price.salePrice + surchargeValue
+      : price.price + surchargeValue);
     return price.salePrice ? price.salePrice + surchargeValue : price.price + surchargeValue;
   };
 
@@ -40,11 +46,11 @@ module.exports = (context, callback) => {
         // callback();
       });
       Promise.all(promises).then(response => {
-        console.log(response);
+        console.log('response after order item price update', response);
         callback();
       });
     }).catch(e => {
-      console.log(e);
+      console.log('error occurred when order item api failed', e);
       callback();
     });
   };
