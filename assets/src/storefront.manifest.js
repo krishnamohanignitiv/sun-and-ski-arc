@@ -35,6 +35,10 @@ module.exports = {
   getAllCategories: {
     actionName: 'http.storefront.routes',
     customFunction: require('./domains/storefront/getAllCategories')
+  },
+  setOrderAttributes: {
+    actionName: 'http.storefront.routes',
+    customFunction: require('./domains/storefront/setOrderAttributes')
   }
   // twilo_otp_send: {
   //   actionName: 'http.storefront.routes',
