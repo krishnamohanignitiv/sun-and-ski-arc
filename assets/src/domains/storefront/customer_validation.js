@@ -147,7 +147,7 @@ module.exports = function (context) {
       if (res instanceof Error) {
         return Promise.reject(res);
       }
-      return superagent.post('https://70uae7fha1.execute-api.us-east-2.amazonaws.com/dev')
+      return superagent.post('https://3729ej0sgg.execute-api.us-east-2.amazonaws.com/preprod')
         .send(res)
         .set('Accept', 'application/json');
       // return Promise.resolve();
