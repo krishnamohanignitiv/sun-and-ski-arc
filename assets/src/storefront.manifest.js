@@ -29,7 +29,7 @@ module.exports = {
     customFunction: require('./domains/storefront/twilio_otp_verify')
   },
   productSurcharge: {
-    actionName: 'http.storefront.pages.checkout.request.after',
+    actionName: 'http.storefront.pages.checkout.request.before',
     customFunction: require('./domains/storefront/productSurcharge')
   },
   getAllCategories: {

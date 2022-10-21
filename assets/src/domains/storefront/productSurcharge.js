@@ -27,7 +27,8 @@ module.exports = (context, callback) => {
     const { options, price } = product;
     console.log('Product Options', options);
     console.log('Product Price', price);
-    const { shopperEnteredValue } = getSurcharge(options);
+    const getSurchargeValue = getSurcharge(options);
+    const shopperEnteredValue = getSurchargeValue ? getSurchargeValue.shopperEnteredValue : '0';
     console.log('Surcharge Value Received', shopperEnteredValue);
     const surchargeValue = parseFloat(shopperEnteredValue);
     console.log('New Price of Product', price.salePrice ? price.salePrice + surchargeValue
