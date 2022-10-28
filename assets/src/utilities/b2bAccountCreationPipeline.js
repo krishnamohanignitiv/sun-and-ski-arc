@@ -73,7 +73,7 @@ class B2BAccount {
 
           return b2bAccount.addSalesRep({
             accountId,
-            userId: 'e0f6008ea91544a59b0d667406e372c2',
+            userId: 'c2e8eab6562b468c9abc497956f2ff8d',
           });
         })
         .then(res => {
@@ -188,7 +188,7 @@ class B2BAccount {
         const { id: accountId } = res;
         return b2bAccount.addSalesRep({
           accountId,
-          userId: 'e0f6008ea91544a59b0d667406e372c2',
+          userId: 'c2e8eab6562b468c9abc497956f2ff8d',
         });
       })
       .then(res => {
