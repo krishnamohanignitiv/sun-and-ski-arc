@@ -33,7 +33,9 @@ module.exports = (context, callback) => {
     const surchargeValue = parseFloat(shopperEnteredValue);
     console.log('New Price of Product', price.salePrice ? price.salePrice + surchargeValue
       : price.price + surchargeValue);
-    return price.salePrice ? price.salePrice + surchargeValue : price.price + surchargeValue;
+    console.log('New Price of Product after rounding off', price.salePrice
+      ? (price.salePrice + surchargeValue).toFixed(2) : (price.price + surchargeValue).toFixed(2));
+    return price.salePrice ? (price.salePrice + surchargeValue).toFixed(2) : (price.price + surchargeValue).toFixed(2);
   };
 
   const main = () => {
