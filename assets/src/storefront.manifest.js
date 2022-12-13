@@ -39,6 +39,10 @@ module.exports = {
   setOrderAttributes: {
     actionName: 'http.storefront.routes',
     customFunction: require('./domains/storefront/setOrderAttributes')
+  },
+  variantProductOrder: {
+    actionName: 'http.commerce.catalog.storefront.products.getProduct.after',
+    customFunction: require('./domains/storefront/variantProductOrder')
   }
   // twilo_otp_send: {
   //   actionName: 'http.storefront.routes',
