@@ -44,7 +44,6 @@ module.exports = (ctx, cb) => {
     }
     return arr;
   };
-
   const bundleProductsImage = () => {
     const { productUsage, options } = ctx.response.viewData.model;
     const map = new Map();
