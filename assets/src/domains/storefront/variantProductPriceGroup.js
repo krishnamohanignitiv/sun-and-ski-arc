@@ -23,7 +23,7 @@ module.exports = (ctx, cb) => {
     const msrpArr = new Set();
 
     items.forEach(item => {
-      if (item.fixedPrice) {
+      if (item.isVariant && item.fixedPrice) {
         const key = item.fixedPrice.listPrice.toString();
         if (map.has(key)) {
           const colorCode = item.options.find(
@@ -61,6 +61,7 @@ module.exports = (ctx, cb) => {
   const colorPriceMap = productCode => {
     console.log('====== Variant Product Price Group Working =======');
     const { properties } = ctx.response.viewData.model;
+    const { variations } = ctx.response.viewData.model;
     const isBundleProperty = properties.find(
       prop => prop.attributeFQN === 'tenant~isbundle'
     );
@@ -73,11 +74,18 @@ module.exports = (ctx, cb) => {
       .getProductVariations({ productCode: productCode })
       .then(res => {
         const items = res.items.map(i => {
+          let isVariant = false;
           console.log('variation response', i.variationProductCode);
+          variations.forEach(v => {
+            if (v.productCode === i.variationProductCode){
+              isVariant = true;
+            }
+          });
           return {
             variationProductCode: i.variationProductCode,
             fixedPrice: i.fixedPrice,
             options: i.options,
+            isVariant: isVariant,
           };
         });
         return aggregateVariationPrice(items);
